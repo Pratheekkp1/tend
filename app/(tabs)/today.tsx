@@ -5,7 +5,8 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
 import { TaskList } from "@/components/TaskList";
-import { useCreateTask, useDayTasks, useDeleteTask, useUpdateTask } from "@/lib/tasks";
+import { cyclePriority } from "@/lib/priority";
+import { useCreateTask, useDayTasks, useDeleteTask, useOverdueTasks, useUpdateTask } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
 export default function Today() {
@@ -13,16 +14,24 @@ export default function Today() {
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
 
   const { data: tasks = [] } = useDayTasks(selectedDate);
+  const { data: overdue = [] } = useOverdueTasks();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
   const dateObj = parseISO(selectedDate);
+  const viewingToday = isToday(dateObj);
   const shiftDate = (days: number) =>
     setSelectedDate(format(addDays(dateObj, days), "yyyy-MM-dd"));
 
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
+
+  const toggle = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { completed: !task.completed } });
+  const remove = (task: Task) => deleteTask.mutate(task.id);
+  const cycle = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
 
   return (
     <ScrollView
@@ -32,33 +41,33 @@ export default function Today() {
     >
       <View className="flex-row items-center justify-between pt-4 pb-1">
         <View>
-          <Text className="text-2xl font-bold text-gray-900 dark:text-white">
-            {isToday(dateObj) ? "Today" : format(dateObj, "EEEE")}
+          <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark">
+            {viewingToday ? "Today" : format(dateObj, "EEEE")}
           </Text>
-          <Text className="text-sm text-gray-400 dark:text-gray-500">
+          <Text className="text-sm text-ink-light/45 dark:text-ink-dark/45">
             {format(dateObj, "MMMM d, yyyy")}
           </Text>
         </View>
         <View className="flex-row items-center gap-2">
           <Pressable
             onPress={() => shiftDate(-1)}
-            className="h-9 w-9 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
+            className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10"
           >
-            <Ionicons name="chevron-back" size={18} color="#6b7280" />
+            <Ionicons name="chevron-back" size={18} color="#b06880" />
           </Pressable>
-          {!isToday(dateObj) && (
+          {!viewingToday && (
             <Pressable
               onPress={() => setSelectedDate(format(new Date(), "yyyy-MM-dd"))}
-              className="rounded-full bg-gray-100 dark:bg-white/10 px-3 py-2"
+              className="rounded-full bg-white/70 dark:bg-white/10 px-3 py-2"
             >
-              <Text className="text-xs font-medium text-gray-600 dark:text-gray-300">Today</Text>
+              <Text className="text-xs font-medium text-ink-light/70 dark:text-ink-dark/70">Today</Text>
             </Pressable>
           )}
           <Pressable
             onPress={() => shiftDate(1)}
-            className="h-9 w-9 items-center justify-center rounded-full bg-gray-100 dark:bg-white/10"
+            className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10"
           >
-            <Ionicons name="chevron-forward" size={18} color="#6b7280" />
+            <Ionicons name="chevron-forward" size={18} color="#b06880" />
           </Pressable>
         </View>
       </View>
@@ -66,33 +75,49 @@ export default function Today() {
       <View className="mt-5">
         <QuickAddInput
           placeholder="Add a task for this day"
-          onSubmit={(title) => createTask.mutate({ title, due_date: selectedDate })}
+          onSubmit={(title, priority) =>
+            createTask.mutate({ title, due_date: selectedDate, priority })
+          }
         />
       </View>
+
+      {viewingToday && overdue.length > 0 && (
+        <View className="mt-6">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-500">
+            Overdue
+          </Text>
+          <TaskList
+            tasks={overdue}
+            emptyLabel=""
+            showDueDate
+            onToggle={toggle}
+            onDelete={remove}
+            onCyclePriority={cycle}
+          />
+        </View>
+      )}
 
       <View className="mt-6">
         <TaskList
           tasks={pending}
           emptyLabel="Nothing due this day. Enjoy the calm."
-          onToggle={(task: Task) =>
-            updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-          }
-          onDelete={(task: Task) => deleteTask.mutate(task.id)}
+          onToggle={toggle}
+          onDelete={remove}
+          onCyclePriority={cycle}
         />
       </View>
 
       {completed.length > 0 && (
         <View className="mt-6">
-          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45">
             Completed
           </Text>
           <TaskList
             tasks={completed}
             emptyLabel=""
-            onToggle={(task: Task) =>
-              updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-            }
-            onDelete={(task: Task) => deleteTask.mutate(task.id)}
+            onToggle={toggle}
+            onDelete={remove}
+            onCyclePriority={cycle}
           />
         </View>
       )}

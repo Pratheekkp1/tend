@@ -9,14 +9,14 @@ interface ButtonProps extends PressableProps {
 const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary: "bg-accent-500 active:bg-accent-600",
   secondary:
-    "bg-gray-100 dark:bg-white/10 active:bg-gray-200 dark:active:bg-white/15",
-  ghost: "bg-transparent active:bg-gray-100 dark:active:bg-white/10",
-  danger: "bg-red-50 dark:bg-red-500/10 active:bg-red-100 dark:active:bg-red-500/20",
+    "bg-white/70 dark:bg-white/10 border border-accent-900/5 dark:border-white/5 active:bg-white/90 dark:active:bg-white/15",
+  ghost: "bg-transparent active:bg-accent-500/5",
+  danger: "bg-red-50/80 dark:bg-red-500/10 active:bg-red-100 dark:active:bg-red-500/20",
 };
 
 const labelClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
   primary: "text-white",
-  secondary: "text-gray-900 dark:text-white",
+  secondary: "text-ink-light dark:text-ink-dark",
   ghost: "text-accent-600 dark:text-accent-300",
   danger: "text-red-600 dark:text-red-400",
 };

@@ -1,3 +1,5 @@
+export type Priority = "none" | "low" | "medium" | "high";
+
 export interface Task {
   id: string;
   user_id: string;
@@ -6,15 +8,16 @@ export interface Task {
   due_date: string | null; // "YYYY-MM-DD", null = general/backlog list
   completed: boolean;
   position: number;
+  priority: Priority;
   created_at: string;
   updated_at: string;
 }
 
 export type NewTask = Pick<Task, "title"> &
-  Partial<Pick<Task, "notes" | "due_date" | "position">>;
+  Partial<Pick<Task, "notes" | "due_date" | "position" | "priority">>;
 
 export type TaskUpdate = Partial<
-  Pick<Task, "title" | "notes" | "due_date" | "completed" | "position">
+  Pick<Task, "title" | "notes" | "due_date" | "completed" | "position" | "priority">
 >;
 
 export interface GoogleCalendarEvent {

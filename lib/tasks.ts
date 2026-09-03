@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { format } from "date-fns";
 import { useEffect } from "react";
 import { useAuth } from "./auth-context";
+import { compareTasks, PRIORITY_ORDER } from "./priority";
 import { supabase } from "./supabase";
 import type { NewTask, Task, TaskUpdate } from "@/types/task";
 
@@ -59,12 +61,26 @@ export function useRealtimeTasksSync() {
 
 export function useGeneralTasks() {
   const { data, ...rest } = useAllTasks();
-  return { data: data?.filter((t) => !t.due_date), ...rest };
+  return { data: data?.filter((t) => !t.due_date).sort(compareTasks), ...rest };
 }
 
 export function useDayTasks(date: string) {
   const { data, ...rest } = useAllTasks();
-  return { data: data?.filter((t) => t.due_date === date), ...rest };
+  return { data: data?.filter((t) => t.due_date === date).sort(compareTasks), ...rest };
+}
+
+/** Incomplete tasks whose due date is strictly before `beforeISO` (defaults to today). */
+export function useOverdueTasks(beforeISO?: string) {
+  const cutoff = beforeISO ?? format(new Date(), "yyyy-MM-dd");
+  const { data, ...rest } = useAllTasks();
+  const overdue = (data ?? [])
+    .filter((t) => !t.completed && t.due_date && t.due_date < cutoff)
+    .sort((a, b) => {
+      const dateDiff = (a.due_date as string).localeCompare(b.due_date as string);
+      if (dateDiff !== 0) return dateDiff;
+      return PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
+    });
+  return { data: overdue, ...rest };
 }
 
 /** Maps "YYYY-MM-DD" -> count of incomplete tasks, for calendar dot markers. */

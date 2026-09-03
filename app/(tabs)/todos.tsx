@@ -2,6 +2,7 @@ import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
 import { TaskList } from "@/components/TaskList";
+import { cyclePriority } from "@/lib/priority";
 import { useCreateTask, useDeleteTask, useGeneralTasks, useUpdateTask } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
@@ -15,6 +16,12 @@ export default function Todos() {
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
 
+  const toggle = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { completed: !task.completed } });
+  const remove = (task: Task) => deleteTask.mutate(task.id);
+  const cycle = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
+
   return (
     <ScrollView
       style={{ paddingTop: insets.top }}
@@ -22,8 +29,8 @@ export default function Todos() {
       className="flex-1"
     >
       <View className="pt-4 pb-1">
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white">Todos</Text>
-        <Text className="text-sm text-gray-400 dark:text-gray-500">
+        <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark">Todos</Text>
+        <Text className="text-sm text-ink-light/45 dark:text-ink-dark/45">
           Your backlog — no date attached
         </Text>
       </View>
@@ -31,7 +38,7 @@ export default function Todos() {
       <View className="mt-5">
         <QuickAddInput
           placeholder="Add to your backlog"
-          onSubmit={(title) => createTask.mutate({ title })}
+          onSubmit={(title, priority) => createTask.mutate({ title, priority })}
         />
       </View>
 
@@ -39,25 +46,23 @@ export default function Todos() {
         <TaskList
           tasks={pending}
           emptyLabel="Your backlog is empty."
-          onToggle={(task: Task) =>
-            updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-          }
-          onDelete={(task: Task) => deleteTask.mutate(task.id)}
+          onToggle={toggle}
+          onDelete={remove}
+          onCyclePriority={cycle}
         />
       </View>
 
       {completed.length > 0 && (
         <View className="mt-6">
-          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45">
             Completed
           </Text>
           <TaskList
             tasks={completed}
             emptyLabel=""
-            onToggle={(task: Task) =>
-              updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-            }
-            onDelete={(task: Task) => deleteTask.mutate(task.id)}
+            onToggle={toggle}
+            onDelete={remove}
+            onCyclePriority={cycle}
           />
         </View>
       )}

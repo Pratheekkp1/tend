@@ -26,13 +26,13 @@ export default function SignIn() {
   };
 
   return (
-    <View className="flex-1 items-center justify-center gap-8 bg-surface-subtle dark:bg-surface-dark px-8">
+    <View className="flex-1 items-center justify-center gap-8 px-8">
       <View className="items-center gap-3">
         <View className="h-16 w-16 items-center justify-center rounded-3xl bg-accent-500">
-          <Ionicons name="checkmark-done" size={30} color="white" />
+          <Ionicons name="flower" size={28} color="white" />
         </View>
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white">Productivity</Text>
-        <Text className="text-center text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+        <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark">Productivity</Text>
+        <Text className="text-center text-sm text-ink-light/60 dark:text-ink-dark/60 max-w-xs">
           Your calendar and to-dos, in sync everywhere.
         </Text>
       </View>

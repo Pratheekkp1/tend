@@ -15,7 +15,7 @@ export function Checkbox({
       className={`h-6 w-6 items-center justify-center rounded-full border-2 ${
         checked
           ? "border-accent-500 bg-accent-500"
-          : "border-gray-300 dark:border-white/25"
+          : "border-accent-300 dark:border-white/25"
       }`}
     >
       {checked && <Ionicons name="checkmark" size={16} color="white" />}

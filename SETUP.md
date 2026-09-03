@@ -10,6 +10,8 @@ your behalf (they require your own accounts), so follow these steps once.
 1. Create a free project at [supabase.com](https://supabase.com).
 2. In the dashboard, go to **SQL Editor** → paste the contents of
    [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) → **Run**.
+   Then do the same for [`supabase/migrations/0002_add_priority.sql`](supabase/migrations/0002_add_priority.sql)
+   (adds the `priority` column — run any new migration file added here later the same way).
    This creates the `tasks` and `google_calendar_tokens` tables with row-level
    security so each user only ever sees their own data.
 3. Go to **Project Settings → API** and copy:

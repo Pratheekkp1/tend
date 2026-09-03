@@ -5,27 +5,32 @@ module.exports = {
     "./components/**/*.{js,jsx,ts,tsx}",
   ],
   presets: [require("nativewind/preset")],
-  darkMode: "class",
+  darkMode: "media",
   theme: {
     extend: {
       colors: {
+        // Sakura / cherry-blossom palette
         accent: {
-          50: "#eef4ff",
-          100: "#dfe8ff",
-          200: "#c2d3ff",
-          300: "#9ab3ff",
-          400: "#6f8bff",
-          500: "#4c65f7",
-          600: "#3a4bde",
-          700: "#2f3ab3",
-          800: "#2a318c",
-          900: "#272d6f",
+          50: "#fff1f5",
+          100: "#ffe1eb",
+          200: "#ffc2d6",
+          300: "#ff9dbe",
+          400: "#f97ba3",
+          500: "#ec5a8a",
+          600: "#d43f70",
+          700: "#b02f58",
+          800: "#8a2545",
+          900: "#6b1e37",
         },
         surface: {
-          light: "#ffffff",
-          subtle: "#f6f7fb",
-          dark: "#15161c",
-          "dark-subtle": "#1e202a",
+          light: "#fffaf8",
+          subtle: "#fdf3f3",
+          dark: "#1c1420",
+          "dark-subtle": "#251a29",
+        },
+        ink: {
+          light: "#4a3540",
+          dark: "#f3e8ec",
         },
       },
       fontFamily: {

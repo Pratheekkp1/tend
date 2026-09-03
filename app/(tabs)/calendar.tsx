@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
 import { TaskList } from "@/components/TaskList";
 import { useGoogleCalendarEvents, useGoogleCalendarStatus } from "@/lib/googleCalendar";
+import { cyclePriority } from "@/lib/priority";
 import {
   useCreateTask,
   useDayTasks,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
-const ACCENT = "#4c65f7";
+const ACCENT = "#ec5a8a";
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
@@ -50,6 +51,12 @@ export default function CalendarScreen() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
 
+  const toggleTask = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { completed: !task.completed } });
+  const removeTask = (task: Task) => deleteTask.mutate(task.id);
+  const cycleTaskPriority = (task: Task) =>
+    updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
+
   const markedDates: MarkedDates = useMemo(() => {
     const marks: MarkedDates = {};
     for (const date of Object.keys(counts)) {
@@ -65,14 +72,20 @@ export default function CalendarScreen() {
 
   const theme = {
     calendarBackground: "transparent",
-    dayTextColor: isDark ? "#f3f4f6" : "#111827",
-    monthTextColor: isDark ? "#f3f4f6" : "#111827",
-    textDisabledColor: isDark ? "#4b5563" : "#d1d5db",
+    dayTextColor: isDark ? "#f3e8ec" : "#4a3540",
+    monthTextColor: isDark ? "#f3e8ec" : "#4a3540",
+    // Kept clearly legible (not just faint) so adjacent-month days don't read as missing.
+    textDisabledColor: isDark ? "#6b5560" : "#b98a99",
     todayTextColor: ACCENT,
+    todayBackgroundColor: isDark ? "rgba(236,90,138,0.18)" : "rgba(236,90,138,0.12)",
     arrowColor: ACCENT,
     selectedDayBackgroundColor: ACCENT,
     selectedDayTextColor: "#ffffff",
-    textSectionTitleColor: isDark ? "#9ca3af" : "#6b7280",
+    textSectionTitleColor: isDark ? "#c98a9c" : "#b06880",
+    "stylesheet.calendar.header": {
+      dayTextAtIndex0: { color: isDark ? "#c98a9c" : "#b06880" },
+      dayTextAtIndex6: { color: isDark ? "#c98a9c" : "#b06880" },
+    },
   };
 
   const pending = dayTasks.filter((t) => !t.completed);
@@ -81,7 +94,7 @@ export default function CalendarScreen() {
 
   const dayPanelContent = (
     <View className={`px-5 pb-8 ${isWide ? "pt-6" : "pt-2"}`}>
-      <Text className="text-lg font-bold text-gray-900 dark:text-white">
+      <Text className="text-lg font-bold text-ink-light dark:text-ink-dark">
         {format(dateObj, "EEEE, MMMM d")}
       </Text>
 
@@ -98,11 +111,11 @@ export default function CalendarScreen() {
               >
                 <Ionicons name="calendar-clear-outline" size={16} color={ACCENT} />
                 <View className="flex-1">
-                  <Text className="text-sm font-medium text-gray-900 dark:text-white">
+                  <Text className="text-sm font-medium text-ink-light dark:text-ink-dark">
                     {event.title}
                   </Text>
                   {!event.allDay && (
-                    <Text className="text-xs text-gray-500 dark:text-gray-400">
+                    <Text className="text-xs text-ink-light/55 dark:text-ink-dark/55">
                       {format(new Date(event.start), "h:mm a")} –{" "}
                       {format(new Date(event.end), "h:mm a")}
                     </Text>
@@ -117,7 +130,9 @@ export default function CalendarScreen() {
       <View className="mt-5">
         <QuickAddInput
           placeholder="Add a task for this day"
-          onSubmit={(title) => createTask.mutate({ title, due_date: selectedDate })}
+          onSubmit={(title, priority) =>
+            createTask.mutate({ title, due_date: selectedDate, priority })
+          }
         />
       </View>
 
@@ -125,25 +140,23 @@ export default function CalendarScreen() {
         <TaskList
           tasks={pending}
           emptyLabel="Nothing scheduled."
-          onToggle={(task: Task) =>
-            updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-          }
-          onDelete={(task: Task) => deleteTask.mutate(task.id)}
+          onToggle={toggleTask}
+          onDelete={removeTask}
+          onCyclePriority={cycleTaskPriority}
         />
       </View>
 
       {completed.length > 0 && (
         <View className="mt-5">
-          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45">
             Completed
           </Text>
           <TaskList
             tasks={completed}
             emptyLabel=""
-            onToggle={(task: Task) =>
-              updateTask.mutate({ id: task.id, patch: { completed: !task.completed } })
-            }
-            onDelete={(task: Task) => deleteTask.mutate(task.id)}
+            onToggle={toggleTask}
+            onDelete={removeTask}
+            onCyclePriority={cycleTaskPriority}
           />
         </View>
       )}
@@ -155,8 +168,8 @@ export default function CalendarScreen() {
   if (isWide) {
     return (
       <View className="flex-1 flex-row" style={{ paddingTop: insets.top }}>
-        <View className="w-[380px] border-r border-gray-200 dark:border-white/10 px-5 pt-4">
-          <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Calendar</Text>
+        <View className="w-[380px] border-r border-accent-900/10 dark:border-white/10 px-5 pt-4">
+          <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark mb-2">Calendar</Text>
           <Calendar
             current={selectedDate}
             onDayPress={onDayPress}
@@ -173,7 +186,7 @@ export default function CalendarScreen() {
   return (
     <ScrollView style={{ paddingTop: insets.top }} className="flex-1">
       <View className="px-5 pt-4">
-        <Text className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Calendar</Text>
+        <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark mb-2">Calendar</Text>
         <Calendar
           current={selectedDate}
           onDayPress={onDayPress}
