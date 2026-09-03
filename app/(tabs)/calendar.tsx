@@ -1,21 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { format, parseISO } from "date-fns";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Calendar, type DateData } from "react-native-calendars";
 import type { MarkedDates } from "react-native-calendars/src/types";
-import {
-  ActivityIndicator,
-  Linking,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  useColorScheme,
-} from "react-native";
+import { Text, View, useColorScheme, useWindowDimensions } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { DayAgenda } from "@/components/DayAgenda";
 import { DaySheet } from "@/components/DaySheet";
-import { QuickAddInput } from "@/components/ui/QuickAddInput";
-import { TaskList } from "@/components/TaskList";
 import { useGoogleCalendarEvents, useGoogleCalendarStatus } from "@/lib/googleCalendar";
 import { cyclePriority } from "@/lib/priority";
 import {
@@ -28,14 +19,17 @@ import {
 import type { Task } from "@/types/task";
 
 const ACCENT = "#f28482";
+const WIDE_BREAKPOINT = 768;
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
   const scheme = useColorScheme();
   const isDark = scheme === "dark";
+  const { width, height } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
 
   const [selectedDate, setSelectedDate] = useState(() => format(new Date(), "yyyy-MM-dd"));
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [dayOpen, setDayOpen] = useState(false);
 
   const { data: counts = {} } = useTaskCountsByDate();
   const { data: dayTasks = [] } = useDayTasks(selectedDate);
@@ -43,7 +37,7 @@ export default function CalendarScreen() {
   const { data: googleEvents = [], isFetching: loadingEvents } = useGoogleCalendarEvents(
     selectedDate,
     selectedDate,
-    Boolean(googleStatus?.connected) && sheetOpen
+    Boolean(googleStatus?.connected) && dayOpen
   );
 
   const createTask = useCreateTask();
@@ -93,104 +87,113 @@ export default function CalendarScreen() {
 
   const onDayPress = (day: DateData) => {
     setSelectedDate(day.dateString);
-    setSheetOpen(true);
+    setDayOpen(true);
   };
 
-  return (
-    <View className="flex-1" style={{ paddingTop: insets.top }}>
-      <View className="flex-1 justify-center px-5">
-        <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark mb-2">Calendar</Text>
-        <Calendar
-          current={selectedDate}
-          onDayPress={onDayPress}
-          markedDates={markedDates}
-          theme={theme}
-          enableSwipeMonths
-        />
+  const agenda = (
+    <DayAgenda
+      dateObj={dateObj}
+      googleConnected={Boolean(googleStatus?.connected)}
+      googleEvents={googleEvents}
+      loadingEvents={loadingEvents}
+      pending={pending}
+      completed={completed}
+      onCreateTask={(title, priority) => createTask.mutate({ title, due_date: selectedDate, priority })}
+      onToggle={toggleTask}
+      onDelete={removeTask}
+      onCyclePriority={cycleTaskPriority}
+      onClose={() => setDayOpen(false)}
+    />
+  );
+
+  const calendarBlock = (
+    <View className="px-5">
+      <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark mb-2">Calendar</Text>
+      <Calendar
+        current={selectedDate}
+        onDayPress={onDayPress}
+        markedDates={markedDates}
+        theme={theme}
+        enableSwipeMonths
+      />
+      {!dayOpen && (
         <Text className="mt-4 text-center text-sm text-ink-light/40 dark:text-ink-dark/40">
           Tap a day to see and add tasks
         </Text>
-      </View>
+      )}
+    </View>
+  );
 
-      <DaySheet visible={sheetOpen} onClose={() => setSheetOpen(false)}>
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="px-5 pb-8"
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="flex-row items-center justify-between mb-1">
-            <Text className="text-lg font-bold text-ink-light dark:text-ink-dark">
-              {format(dateObj, "EEEE, MMMM d")}
-            </Text>
-            <Pressable onPress={() => setSheetOpen(false)} hitSlop={8} className="p-1">
-              <Ionicons name="close" size={20} color="#c9a08f" />
-            </Pressable>
-          </View>
+  if (isWide) {
+    const panelHeight = Math.min(380, height * 0.42);
+    return (
+      <WideCalendarSplit
+        insetsTop={insets.top}
+        panelHeight={panelHeight}
+        open={dayOpen}
+        calendarBlock={calendarBlock}
+        agenda={agenda}
+      />
+    );
+  }
 
-          {googleStatus?.connected && (
-            <View className="mt-4 gap-2">
-              {loadingEvents ? (
-                <ActivityIndicator size="small" />
-              ) : googleEvents.length > 0 ? (
-                googleEvents.map((event) => (
-                  <Pressable
-                    key={event.id}
-                    onPress={() => event.htmlLink && Linking.openURL(event.htmlLink)}
-                    className="flex-row items-center gap-2 rounded-xl border border-accent-200 dark:border-accent-800 bg-accent-50 dark:bg-accent-500/10 px-3 py-2.5"
-                  >
-                    <Ionicons name="calendar-clear-outline" size={16} color={ACCENT} />
-                    <View className="flex-1">
-                      <Text className="text-sm font-medium text-ink-light dark:text-ink-dark">
-                        {event.title}
-                      </Text>
-                      {!event.allDay && (
-                        <Text className="text-xs text-ink-light/55 dark:text-ink-dark/55">
-                          {format(new Date(event.start), "h:mm a")} –{" "}
-                          {format(new Date(event.end), "h:mm a")}
-                        </Text>
-                      )}
-                    </View>
-                  </Pressable>
-                ))
-              ) : null}
-            </View>
-          )}
-
-          <View className="mt-5">
-            <QuickAddInput
-              placeholder="Add a task for this day"
-              onSubmit={(title, priority) =>
-                createTask.mutate({ title, due_date: selectedDate, priority })
-              }
-            />
-          </View>
-
-          <View className="mt-5">
-            <TaskList
-              tasks={pending}
-              emptyLabel="Nothing scheduled."
-              onToggle={toggleTask}
-              onDelete={removeTask}
-              onCyclePriority={cycleTaskPriority}
-            />
-          </View>
-
-          {completed.length > 0 && (
-            <View className="mt-5">
-              <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45">
-                Completed
-              </Text>
-              <TaskList
-                tasks={completed}
-                emptyLabel=""
-                onToggle={toggleTask}
-                onDelete={removeTask}
-                onCyclePriority={cycleTaskPriority}
-              />
-            </View>
-          )}
-        </ScrollView>
+  return (
+    <View className="flex-1" style={{ paddingTop: insets.top }}>
+      <View className="flex-1 justify-center">{calendarBlock}</View>
+      <DaySheet visible={dayOpen} onClose={() => setDayOpen(false)}>
+        {agenda}
       </DaySheet>
+    </View>
+  );
+}
+
+/** Wide-screen layout: calendar shrinks/slides up and the day panel slides
+ * up from the bottom into the freed space -- no backdrop, both stay
+ * interactive at once (unlike the phone's modal-style DaySheet). */
+function WideCalendarSplit({
+  insetsTop,
+  panelHeight,
+  open,
+  calendarBlock,
+  agenda,
+}: {
+  insetsTop: number;
+  panelHeight: number;
+  open: boolean;
+  calendarBlock: React.ReactNode;
+  agenda: React.ReactNode;
+}) {
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withTiming(open ? 1 : 0, { duration: 280 });
+  }, [open, progress]);
+
+  const calendarAnimStyle = useAnimatedStyle(() => ({
+    paddingBottom: progress.value * panelHeight,
+  }));
+
+  const panelAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: (1 - progress.value) * (panelHeight + 40) }],
+  }));
+
+  return (
+    <View className="flex-1" style={{ paddingTop: insetsTop }}>
+      <Animated.View style={[{ flex: 1, justifyContent: "center" }, calendarAnimStyle]}>
+        {calendarBlock}
+      </Animated.View>
+
+      <Animated.View
+        pointerEvents={open ? "auto" : "none"}
+        style={[
+          { position: "absolute", left: 0, right: 0, bottom: 0, height: panelHeight },
+          panelAnimStyle,
+        ]}
+      >
+        <View className="flex-1 rounded-t-3xl border-t border-accent-900/10 dark:border-white/10 bg-surface-light dark:bg-surface-dark-subtle overflow-hidden">
+          {agenda}
+        </View>
+      </Animated.View>
     </View>
   );
 }
