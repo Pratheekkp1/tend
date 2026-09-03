@@ -27,7 +27,7 @@ import {
 } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
-const ACCENT = "#ec5a8a";
+const ACCENT = "#f28482";
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
@@ -72,19 +72,19 @@ export default function CalendarScreen() {
 
   const theme = {
     calendarBackground: "transparent",
-    dayTextColor: isDark ? "#f3e8ec" : "#4a3540",
-    monthTextColor: isDark ? "#f3e8ec" : "#4a3540",
+    dayTextColor: isDark ? "#f7ede2" : "#4a3f37",
+    monthTextColor: isDark ? "#f7ede2" : "#4a3f37",
     // Kept clearly legible (not just faint) so adjacent-month days don't read as missing.
-    textDisabledColor: isDark ? "#6b5560" : "#b98a99",
+    textDisabledColor: isDark ? "#6b5c4f" : "#c4a58f",
     todayTextColor: ACCENT,
-    todayBackgroundColor: isDark ? "rgba(236,90,138,0.18)" : "rgba(236,90,138,0.12)",
+    todayBackgroundColor: isDark ? "rgba(242,132,130,0.2)" : "rgba(242,132,130,0.14)",
     arrowColor: ACCENT,
     selectedDayBackgroundColor: ACCENT,
     selectedDayTextColor: "#ffffff",
-    textSectionTitleColor: isDark ? "#c98a9c" : "#b06880",
+    textSectionTitleColor: isDark ? "#f59d97" : "#c25553",
     "stylesheet.calendar.header": {
-      dayTextAtIndex0: { color: isDark ? "#c98a9c" : "#b06880" },
-      dayTextAtIndex6: { color: isDark ? "#c98a9c" : "#b06880" },
+      dayTextAtIndex0: { color: isDark ? "#f59d97" : "#c25553" },
+      dayTextAtIndex6: { color: isDark ? "#f59d97" : "#c25553" },
     },
   };
 

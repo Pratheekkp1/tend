@@ -53,7 +53,7 @@ export default function Today() {
             onPress={() => shiftDate(-1)}
             className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10"
           >
-            <Ionicons name="chevron-back" size={18} color="#b06880" />
+            <Ionicons name="chevron-back" size={18} color="#c25553" />
           </Pressable>
           {!viewingToday && (
             <Pressable
@@ -67,7 +67,7 @@ export default function Today() {
             onPress={() => shiftDate(1)}
             className="h-9 w-9 items-center justify-center rounded-full bg-white/70 dark:bg-white/10"
           >
-            <Ionicons name="chevron-forward" size={18} color="#b06880" />
+            <Ionicons name="chevron-forward" size={18} color="#c25553" />
           </Pressable>
         </View>
       </View>
@@ -83,7 +83,7 @@ export default function Today() {
 
       {viewingToday && overdue.length > 0 && (
         <View className="mt-6">
-          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-500">
+          <Text className="mb-2 text-xs font-semibold uppercase tracking-wide text-accent-700 dark:text-accent-300">
             Overdue
           </Text>
           <TaskList

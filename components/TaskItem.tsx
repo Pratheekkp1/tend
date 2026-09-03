@@ -23,7 +23,7 @@ export function TaskItem({
   return (
     <View
       className={`flex-row items-center gap-3 rounded-xl bg-white/70 dark:bg-surface-dark-subtle/70 px-4 py-3 border ${
-        overdue ? "border-red-400/40" : "border-accent-900/5 dark:border-white/5"
+        overdue ? "border-accent-500/40" : "border-accent-900/5 dark:border-white/5"
       }`}
     >
       <Checkbox checked={task.completed} onToggle={onToggle} />
@@ -40,7 +40,7 @@ export function TaskItem({
         {(task.notes || (showDueDate && task.due_date) || overdue) && (
           <View className="mt-0.5 flex-row items-center gap-2">
             {overdue && (
-              <Text className="text-xs font-semibold text-red-500">Overdue</Text>
+              <Text className="text-xs font-semibold text-accent-700 dark:text-accent-300">Overdue</Text>
             )}
             {showDueDate && task.due_date && !overdue ? (
               <Text className="text-xs text-ink-light/45 dark:text-ink-dark/45">
@@ -64,11 +64,11 @@ export function TaskItem({
         <Ionicons
           name={task.priority === "none" ? "flag-outline" : "flag"}
           size={17}
-          color={task.priority === "none" ? "#d6b8c2" : PRIORITY_COLOR[task.priority]}
+          color={task.priority === "none" ? "#cbb9ad" : PRIORITY_COLOR[task.priority]}
         />
       </Pressable>
       <Pressable onPress={onDelete} hitSlop={8} className="p-1">
-        <Ionicons name="trash-outline" size={18} color="#c98a9c" />
+        <Ionicons name="trash-outline" size={18} color="#b0a08f" />
       </Pressable>
     </View>
   );

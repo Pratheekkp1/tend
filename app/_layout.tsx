@@ -13,8 +13,8 @@ const queryClient = new QueryClient({
 });
 
 // The navigator paints its own opaque theme background beneath every screen's
-// content, independent of contentStyle -- override it so our gradient/petals
-// show through instead of React Navigation's default #f2f2f2 / near-black.
+// content, independent of contentStyle -- override it so AppBackground shows
+// through instead of React Navigation's default #f2f2f2 / near-black.
 const TransparentLight = { ...DefaultTheme, colors: { ...DefaultTheme.colors, background: "transparent" } };
 const TransparentDark = { ...DarkTheme, colors: { ...DarkTheme.colors, background: "transparent" } };
 

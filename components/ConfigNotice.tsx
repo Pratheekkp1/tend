@@ -6,7 +6,7 @@ export function ConfigNotice({ title, body }: { title: string; body: string }) {
     <View className="flex-1 items-center justify-center px-8">
       <View className="max-w-sm items-center gap-4">
         <View className="h-14 w-14 items-center justify-center rounded-2xl bg-accent-500/10">
-          <Ionicons name="flower-outline" size={26} color="#ec5a8a" />
+          <Ionicons name="flower-outline" size={26} color="#f28482" />
         </View>
         <Text className="text-center text-lg font-semibold text-ink-light dark:text-ink-dark">
           {title}

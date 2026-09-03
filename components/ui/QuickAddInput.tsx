@@ -31,7 +31,7 @@ export function QuickAddInput({
   return (
     <View className="gap-1.5">
       <View className="flex-row items-center rounded-xl bg-white/70 dark:bg-white/10 border border-accent-900/5 dark:border-white/5 px-3">
-        <Ionicons name="add" size={20} color="#c98a9c" />
+        <Ionicons name="add" size={20} color="#b0a08f" />
         <TextInput
           value={value}
           onChangeText={(text) => {
@@ -42,7 +42,7 @@ export function QuickAddInput({
             }
           }}
           placeholder={placeholder}
-          placeholderTextColor="#c9a0ad"
+          placeholderTextColor="#c9b9a7"
           onSubmitEditing={submit}
           returnKeyType="done"
           className="flex-1 px-2 py-3 text-base text-ink-light dark:text-ink-dark"
@@ -56,7 +56,7 @@ export function QuickAddInput({
           <Ionicons
             name={priority === "none" ? "flag-outline" : "flag"}
             size={18}
-            color={priority === "none" ? "#c9a0ad" : PRIORITY_COLOR[priority]}
+            color={priority === "none" ? "#c9b9a7" : PRIORITY_COLOR[priority]}
           />
         </Pressable>
         {value.length > 0 && (

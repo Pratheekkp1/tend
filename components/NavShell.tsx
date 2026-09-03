@@ -1,13 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
 import { Link, usePathname } from "expo-router";
 import type { ReactNode } from "react";
-import { Platform, Pressable, Text, View, useColorScheme, useWindowDimensions } from "react-native";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const WIDE_BREAKPOINT = 768;
-const ACCENT = "#ec5a8a";
-const INACTIVE = "#b98d9a";
+const ACCENT = "#f28482";
+const INACTIVE = "#c9a08f";
 
 const NAV_ITEMS = [
   { href: "/(tabs)/today", label: "Today", icon: "sunny-outline", activeIcon: "sunny" },
@@ -20,21 +19,14 @@ export function NavShell({ children }: { children: ReactNode }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
-  const isDark = useColorScheme() === "dark";
   const isWide = width >= WIDE_BREAKPOINT;
-  // expo-blur's web fallback ignores tint/intensity, so fall back to a translucent tint there.
-  const webTranslucent = Platform.OS === "web";
 
   if (isWide) {
     return (
       <View className="flex-1 flex-row">
-        <BlurView
-          intensity={40}
-          tint={isDark ? "dark" : "light"}
+        <View
           style={{ paddingTop: insets.top + 24, width: 240 }}
-          className={`border-r border-accent-900/10 dark:border-white/10 px-4 ${
-            webTranslucent ? "bg-white/60 dark:bg-surface-dark/70" : ""
-          }`}
+          className="border-r border-accent-900/10 dark:border-white/10 bg-white/40 dark:bg-black/10 px-4"
         >
           <Text className="px-2 mb-8 text-lg font-bold text-ink-light dark:text-ink-dark">
             Productivity
@@ -66,7 +58,7 @@ export function NavShell({ children }: { children: ReactNode }) {
               );
             })}
           </View>
-        </BlurView>
+        </View>
         <View className="flex-1">{children}</View>
       </View>
     );
@@ -75,13 +67,9 @@ export function NavShell({ children }: { children: ReactNode }) {
   return (
     <View className="flex-1">
       <View className="flex-1">{children}</View>
-      <BlurView
-        intensity={50}
-        tint={isDark ? "dark" : "light"}
+      <View
         style={{ paddingBottom: insets.bottom || 8 }}
-        className={`flex-row border-t border-accent-900/10 dark:border-white/10 ${
-          webTranslucent ? "bg-white/70 dark:bg-surface-dark/80" : ""
-        }`}
+        className="flex-row border-t border-accent-900/10 dark:border-white/10 bg-white/40 dark:bg-black/10"
       >
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href.replace("/(tabs)", ""));
@@ -104,7 +92,7 @@ export function NavShell({ children }: { children: ReactNode }) {
             </Link>
           );
         })}
-      </BlurView>
+      </View>
     </View>
   );
 }

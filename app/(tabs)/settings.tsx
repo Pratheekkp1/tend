@@ -3,13 +3,81 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 import { useAuth } from "@/lib/auth-context";
 import { isGoogleConfigured } from "@/lib/env";
+import { upgradeGuestToEmailAccount } from "@/lib/emailAuth";
 import {
   useConnectGoogleCalendar,
   useDisconnectGoogleCalendar,
   useGoogleCalendarStatus,
 } from "@/lib/googleCalendar";
+
+function GuestUpgradeCard() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await upgradeGuestToEmailAccount(email, password);
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save your account");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <View className="rounded-2xl bg-accent-500/10 border border-accent-500/20 p-4 mb-4">
+        <Text className="text-sm text-ink-light dark:text-ink-dark">
+          Check your email to confirm — your tasks are already saved to this account.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View className="rounded-2xl bg-accent-500/10 border border-accent-500/20 p-4 mb-4 gap-3">
+      <View>
+        <Text className="text-sm font-semibold text-ink-light dark:text-ink-dark mb-1">
+          You're using guest mode
+        </Text>
+        <Text className="text-xs text-ink-light/60 dark:text-ink-dark/60">
+          Your tasks only live on this device right now. Add an email and password to keep them
+          safe and sync across devices — nothing you've made gets lost.
+        </Text>
+      </View>
+      <TextField
+        value={email}
+        onChangeText={setEmail}
+        placeholder="Email"
+        autoCapitalize="none"
+        keyboardType="email-address"
+        textContentType="emailAddress"
+      />
+      <TextField
+        value={password}
+        onChangeText={setPassword}
+        placeholder="Password"
+        secureTextEntry
+        textContentType="newPassword"
+      />
+      <Button
+        label={busy ? "Saving…" : "Save my account"}
+        onPress={submit}
+        disabled={busy || !email || !password}
+      />
+      {error ? <Text className="text-sm text-red-500">{error}</Text> : null}
+    </View>
+  );
+}
 
 export default function Settings() {
   const insets = useSafeAreaInsets();
@@ -18,6 +86,7 @@ export default function Settings() {
   const { connect, ready, response, isExchanging, exchange } = useConnectGoogleCalendar();
   const disconnect = useDisconnectGoogleCalendar();
   const [error, setError] = useState<string | null>(null);
+  const isGuest = Boolean(session?.user.is_anonymous);
 
   useEffect(() => {
     if (response?.type === "success") {
@@ -31,11 +100,15 @@ export default function Settings() {
     <ScrollView style={{ paddingTop: insets.top }} contentContainerClassName="px-5 pb-8" className="flex-1">
       <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark pt-4 mb-6">Settings</Text>
 
+      {isGuest && <GuestUpgradeCard />}
+
       <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
         <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-2">
           Account
         </Text>
-        <Text className="text-base text-ink-light dark:text-ink-dark mb-4">{session?.user.email}</Text>
+        <Text className="text-base text-ink-light dark:text-ink-dark mb-4">
+          {isGuest ? "Guest" : session?.user.email}
+        </Text>
         <Button label="Sign out" variant="secondary" onPress={() => signOut()} />
       </View>
 
@@ -54,8 +127,8 @@ export default function Settings() {
         ) : status?.connected ? (
           <View className="gap-3">
             <View className="flex-row items-center gap-2">
-              <Ionicons name="checkmark-circle" size={18} color="#22c55e" />
-              <Text className="text-sm text-gray-700 dark:text-gray-200">Connected</Text>
+              <Ionicons name="checkmark-circle" size={18} color="#84a59d" />
+              <Text className="text-sm text-ink-light dark:text-ink-dark">Connected</Text>
             </View>
             <Button
               label="Disconnect"
