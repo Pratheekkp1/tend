@@ -3,6 +3,8 @@ import { useMemo } from "react";
 import { Text, View } from "react-native";
 import { TaskItem } from "./TaskItem";
 import { isOverdue } from "@/lib/priority";
+import { cycleRecurrence } from "@/lib/recurrence";
+import { useUpdateTask } from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
 export function TaskList({
@@ -21,6 +23,7 @@ export function TaskList({
   onCyclePriority: (task: Task) => void;
 }) {
   const todayISO = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
+  const updateTask = useUpdateTask();
 
   if (tasks.length === 0) {
     return (
@@ -41,6 +44,9 @@ export function TaskList({
           onToggle={() => onToggle(task)}
           onDelete={() => onDelete(task)}
           onCyclePriority={() => onCyclePriority(task)}
+          onCycleRecurrence={() =>
+            updateTask.mutate({ id: task.id, patch: { recurrence: cycleRecurrence(task.recurrence) } })
+          }
         />
       ))}
     </View>

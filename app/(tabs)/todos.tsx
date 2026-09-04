@@ -3,7 +3,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
 import { TaskList } from "@/components/TaskList";
 import { cyclePriority } from "@/lib/priority";
-import { useCreateTask, useDeleteTask, useGeneralTasks, useUpdateTask } from "@/lib/tasks";
+import {
+  useCreateTask,
+  useDeleteTask,
+  useGeneralTasks,
+  useToggleTaskCompletion,
+  useUpdateTask,
+} from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
 export default function Todos() {
@@ -12,12 +18,11 @@ export default function Todos() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const toggle = useToggleTaskCompletion();
 
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
 
-  const toggle = (task: Task) =>
-    updateTask.mutate({ id: task.id, patch: { completed: !task.completed } });
   const remove = (task: Task) => deleteTask.mutate(task.id);
   const cycle = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });

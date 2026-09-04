@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { useEffect } from "react";
 import { useAuth } from "./auth-context";
 import { compareTasks, PRIORITY_ORDER } from "./priority";
+import { nextOccurrenceDate } from "./recurrence";
 import { supabase } from "./supabase";
 import type { NewTask, Task, TaskUpdate } from "@/types/task";
 
@@ -69,6 +70,15 @@ export function useDayTasks(date: string) {
   return { data: data?.filter((t) => t.due_date === date).sort(compareTasks), ...rest };
 }
 
+/** Tasks due within [startISO, endISO], inclusive -- for Week view. */
+export function useTasksInRange(startISO: string, endISO: string) {
+  const { data, ...rest } = useAllTasks();
+  const inRange = (data ?? [])
+    .filter((t) => t.due_date && t.due_date >= startISO && t.due_date <= endISO)
+    .sort(compareTasks);
+  return { data: inRange, ...rest };
+}
+
 /** Incomplete tasks whose due date is strictly before `beforeISO` (defaults to today). */
 export function useOverdueTasks(beforeISO?: string) {
   const cutoff = beforeISO ?? format(new Date(), "yyyy-MM-dd");
@@ -133,6 +143,31 @@ export function useUpdateTask() {
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(userId) }),
   });
+}
+
+/** Toggling completion on a recurring task also schedules its next
+ * occurrence (Todoist-style) instead of materializing every future instance
+ * up front. */
+export function useToggleTaskCompletion() {
+  const updateTask = useUpdateTask();
+  const createTask = useCreateTask();
+
+  return (task: Task) => {
+    const completing = !task.completed;
+    updateTask.mutate({ id: task.id, patch: { completed: completing } });
+
+    if (completing && task.recurrence !== "none" && task.due_date) {
+      createTask.mutate({
+        title: task.title,
+        notes: task.notes ?? undefined,
+        due_date: nextOccurrenceDate(task.due_date, task.recurrence),
+        due_time: task.due_time ?? undefined,
+        duration_minutes: task.duration_minutes ?? undefined,
+        priority: task.priority,
+        recurrence: task.recurrence,
+      });
+    }
+  };
 }
 
 export function useDeleteTask() {

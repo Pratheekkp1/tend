@@ -53,10 +53,16 @@ export function detectPriorityFromTitle(title: string): Priority | null {
   return words.some((w) => HIGH_PRIORITY_KEYWORDS.includes(w)) ? "high" : null;
 }
 
-/** Sort key: higher priority first, then earlier due date, then manual position, then creation order. */
+/** Sort key: higher priority first, then earlier time-of-day (untimed last),
+ * then manual position, then creation order. */
 export function compareTasks(a: Task, b: Task): number {
   const priorityDiff = PRIORITY_ORDER[b.priority] - PRIORITY_ORDER[a.priority];
   if (priorityDiff !== 0) return priorityDiff;
+  if (a.due_time !== b.due_time) {
+    if (!a.due_time) return 1;
+    if (!b.due_time) return -1;
+    return a.due_time.localeCompare(b.due_time);
+  }
   if (a.position !== b.position) return a.position - b.position;
   return a.created_at.localeCompare(b.created_at);
 }

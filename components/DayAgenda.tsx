@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { QuickAddInput } from "./ui/QuickAddInput";
 import { TaskList } from "./TaskList";
-import type { GoogleCalendarEvent, Priority, Task } from "@/types/task";
+import type { GoogleCalendarEvent, Priority, Recurrence, Task } from "@/types/task";
 
 const ACCENT = "#f28482";
 
@@ -28,7 +28,7 @@ export function DayAgenda({
   loadingEvents: boolean;
   pending: Task[];
   completed: Task[];
-  onCreateTask: (title: string, priority: Priority) => void;
+  onCreateTask: (title: string, priority: Priority, dueTime: string | null, recurrence: Recurrence) => void;
   onToggle: (task: Task) => void;
   onDelete: (task: Task) => void;
   onCyclePriority: (task: Task) => void;

@@ -6,7 +6,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
 import { TaskList } from "@/components/TaskList";
 import { cyclePriority } from "@/lib/priority";
-import { useCreateTask, useDayTasks, useDeleteTask, useOverdueTasks, useUpdateTask } from "@/lib/tasks";
+import {
+  useCreateTask,
+  useDayTasks,
+  useDeleteTask,
+  useOverdueTasks,
+  useToggleTaskCompletion,
+  useUpdateTask,
+} from "@/lib/tasks";
 import type { Task } from "@/types/task";
 
 export default function Today() {
@@ -18,6 +25,7 @@ export default function Today() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const toggle = useToggleTaskCompletion();
 
   const dateObj = parseISO(selectedDate);
   const viewingToday = isToday(dateObj);
@@ -27,8 +35,6 @@ export default function Today() {
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
 
-  const toggle = (task: Task) =>
-    updateTask.mutate({ id: task.id, patch: { completed: !task.completed } });
   const remove = (task: Task) => deleteTask.mutate(task.id);
   const cycle = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
@@ -75,8 +81,14 @@ export default function Today() {
       <View className="mt-5">
         <QuickAddInput
           placeholder="Add a task for this day"
-          onSubmit={(title, priority) =>
-            createTask.mutate({ title, due_date: selectedDate, priority })
+          onSubmit={(title, priority, dueTime, recurrence) =>
+            createTask.mutate({
+              title,
+              due_date: selectedDate,
+              priority,
+              due_time: dueTime,
+              recurrence,
+            })
           }
         />
       </View>
