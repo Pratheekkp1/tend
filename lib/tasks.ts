@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { useEffect } from "react";
 import { useAuth } from "./auth-context";
+import { cancelTaskReminder, scheduleTaskReminder } from "./notifications";
 import { compareTasks, PRIORITY_ORDER } from "./priority";
 import { nextOccurrenceDate } from "./recurrence";
 import { supabase } from "./supabase";
@@ -142,7 +143,10 @@ export function useCreateTask() {
       if (error) throw error;
       return data as Task;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(userId) }),
+    onSuccess: (data) => {
+      scheduleTaskReminder(data);
+      queryClient.invalidateQueries({ queryKey: tasksKey(userId) });
+    },
   });
 }
 
@@ -162,7 +166,11 @@ export function useUpdateTask() {
       if (error) throw error;
       return data as Task;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(userId) }),
+    onSuccess: (data) => {
+      cancelTaskReminder(data.id);
+      scheduleTaskReminder(data);
+      queryClient.invalidateQueries({ queryKey: tasksKey(userId) });
+    },
   });
 }
 
@@ -201,6 +209,9 @@ export function useDeleteTask() {
       const { error } = await supabase.from("tasks").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tasksKey(userId) }),
+    onSuccess: (_data, id) => {
+      cancelTaskReminder(id);
+      queryClient.invalidateQueries({ queryKey: tasksKey(userId) });
+    },
   });
 }

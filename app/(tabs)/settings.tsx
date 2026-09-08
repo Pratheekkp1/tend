@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
@@ -12,6 +12,7 @@ import {
   useDisconnectGoogleCalendar,
   useGoogleCalendarStatus,
 } from "@/lib/googleCalendar";
+import { requestNotificationPermission, useNotificationPermissionStatus } from "@/lib/notifications";
 import { useCreateTag, useDeleteTag, useTags } from "@/lib/tags";
 import { useThemePreference, type ThemePreference } from "@/lib/theme";
 
@@ -62,6 +63,38 @@ function AppearanceCard() {
           );
         })}
       </View>
+    </View>
+  );
+}
+
+function NotificationsCard() {
+  const { data: status, isLoading, refetch } = useNotificationPermissionStatus();
+  const [busy, setBusy] = useState(false);
+
+  const enable = async () => {
+    setBusy(true);
+    await requestNotificationPermission();
+    await refetch();
+    setBusy(false);
+  };
+
+  const granted = status === "granted";
+  const denied = status === "denied";
+
+  return (
+    <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-3">
+        Notifications
+      </Text>
+      <Text className="text-sm text-ink-light/60 dark:text-ink-dark/60 mb-3">
+        Get a reminder when a timed task is due.
+      </Text>
+      <Button
+        label={granted ? "Enabled" : denied ? "Denied" : busy ? "Requesting…" : "Enable notifications"}
+        size="sm"
+        onPress={enable}
+        disabled={granted || denied || busy || isLoading}
+      />
     </View>
   );
 }
@@ -247,6 +280,8 @@ export default function Settings() {
       {isGuest && <GuestUpgradeCard />}
 
       <AppearanceCard />
+
+      {Platform.OS !== "web" && <NotificationsCard />}
 
       <TagsCard />
 
