@@ -3,7 +3,8 @@ import { addDays, addWeeks, endOfWeek, format, isToday, parseISO, startOfWeek } 
 import { useEffect, useMemo, useState } from "react";
 import { Calendar, type DateData } from "react-native-calendars";
 import type { MarkedDates } from "react-native-calendars/src/types";
-import { Pressable, Text, View, useColorScheme, useWindowDimensions } from "react-native";
+import { useColorScheme } from "nativewind";
+import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CalendarTimeline, type TimelineDay } from "@/components/CalendarTimeline";
@@ -30,8 +31,8 @@ type ViewMode = "month" | "week" | "day";
 
 export default function CalendarScreen() {
   const insets = useSafeAreaInsets();
-  const scheme = useColorScheme();
-  const isDark = scheme === "dark";
+  const { colorScheme } = useColorScheme();
+  const isDark = colorScheme === "dark";
   const { width, height } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
 
@@ -149,7 +150,13 @@ export default function CalendarScreen() {
             }
           />
         </View>
-        <CalendarTimeline days={days} onToggleTask={toggleTask} />
+        <CalendarTimeline
+          days={days}
+          onToggleTask={toggleTask}
+          onCreateTask={(dateISO, dueTime, durationMinutes, title) =>
+            createTask.mutate({ title, due_date: dateISO, due_time: dueTime, duration_minutes: durationMinutes })
+          }
+        />
       </View>
     );
   }
@@ -190,6 +197,9 @@ export default function CalendarScreen() {
         <CalendarTimeline
           days={weekDays}
           onToggleTask={toggleTask}
+          onCreateTask={(dateISO, dueTime, durationMinutes, title) =>
+            createTask.mutate({ title, due_date: dateISO, due_time: dueTime, duration_minutes: durationMinutes })
+          }
           compact
         />
       </View>

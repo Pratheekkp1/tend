@@ -1,6 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format, isToday, parseISO } from "date-fns";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import {
+  Linking,
+  Modal,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { glassBlur } from "@/lib/glass";
 import { PRIORITY_COLOR } from "@/lib/priority";
 import { formatTime12h } from "@/lib/time";
 import type { GoogleCalendarEvent, Task } from "@/types/task";
@@ -10,6 +21,9 @@ const HOUR_END = 22; // last labeled hour (10 PM); grid extends slightly past it
 const ROW_HEIGHT = 52;
 const GRID_HEIGHT = (HOUR_END - HOUR_START + 1) * ROW_HEIGHT;
 const GOOGLE_BLOCK_COLOR = "#84a59d";
+const ACCENT = "#f28482";
+const MIN_DRAG_MINUTES = 15;
+const DEFAULT_CLICK_MINUTES = 30;
 
 export interface TimelineDay {
   dateISO: string;
@@ -18,29 +32,69 @@ export interface TimelineDay {
   events: GoogleCalendarEvent[];
 }
 
+interface DragRange {
+  dateISO: string;
+  startMin: number;
+  endMin: number;
+}
+
 function minutesFromMidnight(hhmm: string): number {
   const [h, m] = hhmm.split(":").map(Number);
   return h * 60 + m;
+}
+
+function minutesToHHMM(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
 function blockTop(startMinutes: number): number {
   return ((startMinutes - HOUR_START * 60) / 60) * ROW_HEIGHT;
 }
 
-/** Shared hour-grid used by both Day view (one column) and Week view (seven). */
+function yToMinutes(y: number): number {
+  const raw = HOUR_START * 60 + (y / ROW_HEIGHT) * 60;
+  const clamped = Math.max(HOUR_START * 60, Math.min((HOUR_END + 1) * 60, raw));
+  return Math.round(clamped / 15) * 15;
+}
+
+/** Shared hour-grid used by both Day view (one column) and Week view (seven).
+ * Click-and-drag on empty grid space sketches a new timed block; releasing
+ * opens a small title prompt to confirm creation. */
 export function CalendarTimeline({
   days,
   onToggleTask,
+  onCreateTask,
   compact = false,
 }: {
   days: TimelineDay[];
   onToggleTask: (task: Task) => void;
+  onCreateTask?: (dateISO: string, dueTime: string, durationMinutes: number, title: string) => void;
   compact?: boolean;
 }) {
   const hours = Array.from({ length: HOUR_END - HOUR_START + 1 }, (_, i) => HOUR_START + i);
+  const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [drag, setDrag] = useState<DragRange | null>(null);
+  const [pending, setPending] = useState<DragRange | null>(null);
+  const [titleDraft, setTitleDraft] = useState("");
+
+  const confirmCreate = () => {
+    const trimmed = titleDraft.trim();
+    if (pending && trimmed && onCreateTask) {
+      onCreateTask(pending.dateISO, minutesToHHMM(pending.startMin), pending.endMin - pending.startMin, trimmed);
+    }
+    setPending(null);
+    setTitleDraft("");
+  };
+
+  const dismissPending = () => {
+    setPending(null);
+    setTitleDraft("");
+  };
 
   return (
-    <ScrollView className="flex-1" contentContainerClassName="pb-8">
+    <ScrollView className="flex-1" contentContainerClassName="pb-8" scrollEnabled={scrollEnabled}>
       {/* All-day / untimed strip */}
       <View className="flex-row border-b border-accent-900/10 dark:border-white/10 px-2 pb-2 pt-1">
         <View style={{ width: compact ? 44 : 56 }} className="items-end pr-2 pt-1">
@@ -113,89 +167,187 @@ export function CalendarTimeline({
         </View>
 
         <View className="flex-1 flex-row" style={{ height: GRID_HEIGHT }}>
-          {days.map((day) => (
-            <View key={day.dateISO} className="flex-1 border-l border-accent-900/5 dark:border-white/5 relative">
-              {hours.map((h) => (
-                <View
-                  key={h}
-                  style={{ position: "absolute", top: (h - HOUR_START) * ROW_HEIGHT, left: 0, right: 0 }}
-                  className="border-t border-accent-900/5 dark:border-white/5"
-                />
-              ))}
+          {days.map((day) => {
+            const responder = onCreateTask
+              ? PanResponder.create({
+                  onStartShouldSetPanResponder: () => pending === null,
+                  onMoveShouldSetPanResponder: () => pending === null,
+                  onPanResponderGrant: (e) => {
+                    const min = yToMinutes(e.nativeEvent.locationY);
+                    setScrollEnabled(false);
+                    setDrag({ dateISO: day.dateISO, startMin: min, endMin: min + DEFAULT_CLICK_MINUTES });
+                  },
+                  onPanResponderMove: (e) => {
+                    const min = yToMinutes(e.nativeEvent.locationY);
+                    setDrag((d) => (d ? { ...d, endMin: Math.max(min, d.startMin + MIN_DRAG_MINUTES) } : d));
+                  },
+                  onPanResponderRelease: () => {
+                    setScrollEnabled(true);
+                    setDrag((d) => {
+                      if (d) setPending(d);
+                      return null;
+                    });
+                  },
+                  onPanResponderTerminate: () => {
+                    setScrollEnabled(true);
+                    setDrag(null);
+                  },
+                })
+              : null;
 
-              {day.events
-                .filter((e) => !e.allDay)
-                .map((event) => {
-                  const start = new Date(event.start);
-                  const end = new Date(event.end);
-                  const startMin = start.getHours() * 60 + start.getMinutes();
-                  const durationMin = Math.max(20, (end.getTime() - start.getTime()) / 60000);
-                  return (
-                    <Pressable
-                      key={event.id}
-                      onPress={() => event.htmlLink && Linking.openURL(event.htmlLink)}
-                      style={{
-                        position: "absolute",
-                        top: blockTop(startMin),
-                        left: 2,
-                        right: 2,
-                        height: Math.max(20, (durationMin / 60) * ROW_HEIGHT),
-                        backgroundColor: `${GOOGLE_BLOCK_COLOR}25`,
-                        borderLeftColor: GOOGLE_BLOCK_COLOR,
-                      }}
-                      className="rounded-md border-l-2 px-1.5 py-0.5 overflow-hidden"
-                    >
-                      <Text numberOfLines={2} className="text-[10px] font-medium text-ink-light dark:text-ink-dark">
-                        {event.title}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+            return (
+              <View
+                key={day.dateISO}
+                className="flex-1 border-l border-accent-900/5 dark:border-white/5 relative"
+                {...(responder ? responder.panHandlers : {})}
+              >
+                {hours.map((h) => (
+                  <View
+                    key={h}
+                    style={{ position: "absolute", top: (h - HOUR_START) * ROW_HEIGHT, left: 0, right: 0 }}
+                    className="border-t border-accent-900/5 dark:border-white/5"
+                  />
+                ))}
 
-              {day.tasks
-                .filter((t) => t.due_time)
-                .map((task) => {
-                  const startMin = minutesFromMidnight(task.due_time as string);
-                  const durationMin = task.duration_minutes ?? 60;
-                  const color = PRIORITY_COLOR[task.priority] === "transparent" ? "#c9a08f" : PRIORITY_COLOR[task.priority];
-                  return (
-                    <Pressable
-                      key={task.id}
-                      onPress={() => onToggleTask(task)}
-                      style={{
-                        position: "absolute",
-                        top: blockTop(startMin),
-                        left: 2,
-                        right: 2,
-                        height: Math.max(20, (durationMin / 60) * ROW_HEIGHT),
-                        backgroundColor: `${color}25`,
-                        borderLeftColor: color,
-                      }}
-                      className="rounded-md border-l-2 px-1.5 py-0.5 overflow-hidden"
-                    >
-                      <View className="flex-row items-center gap-1">
-                        {task.completed && <Ionicons name="checkmark" size={10} color={color} />}
-                        <Text
-                          numberOfLines={2}
-                          className={`text-[10px] font-medium ${
-                            task.completed ? "line-through text-ink-light/40 dark:text-ink-dark/40" : "text-ink-light dark:text-ink-dark"
-                          }`}
-                        >
-                          {task.title}
+                {drag && drag.dateISO === day.dateISO && (
+                  <View
+                    pointerEvents="none"
+                    style={{
+                      position: "absolute",
+                      top: blockTop(drag.startMin),
+                      left: 2,
+                      right: 2,
+                      height: Math.max(8, blockTop(drag.endMin) - blockTop(drag.startMin)),
+                      backgroundColor: "rgba(242,132,130,0.3)",
+                      borderWidth: 1,
+                      borderColor: ACCENT,
+                      borderRadius: 6,
+                    }}
+                  />
+                )}
+
+                {day.events
+                  .filter((e) => !e.allDay)
+                  .map((event) => {
+                    const start = new Date(event.start);
+                    const end = new Date(event.end);
+                    const startMin = start.getHours() * 60 + start.getMinutes();
+                    const durationMin = Math.max(20, (end.getTime() - start.getTime()) / 60000);
+                    return (
+                      <Pressable
+                        key={event.id}
+                        onPress={() => event.htmlLink && Linking.openURL(event.htmlLink)}
+                        style={{
+                          position: "absolute",
+                          top: blockTop(startMin),
+                          left: 2,
+                          right: 2,
+                          height: Math.max(20, (durationMin / 60) * ROW_HEIGHT),
+                          backgroundColor: `${GOOGLE_BLOCK_COLOR}25`,
+                          borderLeftColor: GOOGLE_BLOCK_COLOR,
+                        }}
+                        className="rounded-md border-l-2 px-1.5 py-0.5 overflow-hidden"
+                      >
+                        <Text numberOfLines={2} className="text-[10px] font-medium text-ink-light dark:text-ink-dark">
+                          {event.title}
                         </Text>
-                      </View>
-                      {!compact && (
-                        <Text className="text-[9px] text-ink-light/50 dark:text-ink-dark/50">
-                          {formatTime12h(task.due_time as string)}
-                        </Text>
-                      )}
-                    </Pressable>
-                  );
-                })}
-            </View>
-          ))}
+                      </Pressable>
+                    );
+                  })}
+
+                {day.tasks
+                  .filter((t) => t.due_time)
+                  .map((task) => {
+                    const startMin = minutesFromMidnight(task.due_time as string);
+                    const durationMin = task.duration_minutes ?? 60;
+                    const color = PRIORITY_COLOR[task.priority] === "transparent" ? "#c9a08f" : PRIORITY_COLOR[task.priority];
+                    return (
+                      <Pressable
+                        key={task.id}
+                        onPress={() => onToggleTask(task)}
+                        style={{
+                          position: "absolute",
+                          top: blockTop(startMin),
+                          left: 2,
+                          right: 2,
+                          height: Math.max(20, (durationMin / 60) * ROW_HEIGHT),
+                          backgroundColor: `${color}25`,
+                          borderLeftColor: color,
+                        }}
+                        className="rounded-md border-l-2 px-1.5 py-0.5 overflow-hidden"
+                      >
+                        <View className="flex-row items-center gap-1">
+                          {task.completed && <Ionicons name="checkmark" size={10} color={color} />}
+                          <Text
+                            numberOfLines={2}
+                            className={`text-[10px] font-medium ${
+                              task.completed ? "line-through text-ink-light/40 dark:text-ink-dark/40" : "text-ink-light dark:text-ink-dark"
+                            }`}
+                          >
+                            {task.title}
+                          </Text>
+                        </View>
+                        {!compact && (
+                          <Text className="text-[9px] text-ink-light/50 dark:text-ink-dark/50">
+                            {formatTime12h(task.due_time as string)}
+                          </Text>
+                        )}
+                      </Pressable>
+                    );
+                  })}
+              </View>
+            );
+          })}
         </View>
       </View>
+
+      <Modal visible={pending !== null} transparent animationType="fade" onRequestClose={dismissPending}>
+        <Pressable
+          className="flex-1 items-center justify-center px-8"
+          style={{ backgroundColor: "rgba(0,0,0,0.35)" }}
+          onPress={dismissPending}
+        >
+          <View
+            className="w-full max-w-xs rounded-2xl overflow-hidden border border-black/5 dark:border-white/10 bg-surface-light dark:bg-surface-dark-subtle/90"
+            style={glassBlur}
+          >
+            <View className="px-4 py-3 border-b border-black/5 dark:border-white/10">
+              <Text className="text-center font-semibold text-ink-light dark:text-ink-dark">New event</Text>
+              {pending && (
+                <Text className="text-center text-xs text-ink-light/50 dark:text-ink-dark/50 mt-0.5">
+                  {format(parseISO(pending.dateISO), "EEE, MMM d")} ·{" "}
+                  {formatTime12h(minutesToHHMM(pending.startMin))}–{formatTime12h(minutesToHHMM(pending.endMin))}
+                </Text>
+              )}
+            </View>
+            <View className="p-4">
+              <TextInput
+                autoFocus
+                value={titleDraft}
+                onChangeText={setTitleDraft}
+                placeholder="Event title"
+                placeholderTextColor="#a39a8f"
+                onSubmitEditing={confirmCreate}
+                returnKeyType="done"
+                className="rounded-xl bg-surface-subtle dark:bg-white/[0.06] border border-black/5 dark:border-white/10 px-3 py-2.5 text-base text-ink-light dark:text-ink-dark"
+                style={{ outlineStyle: "none", outlineWidth: 0 } as never}
+              />
+            </View>
+            <View className="flex-row border-t border-black/5 dark:border-white/10">
+              <Pressable
+                onPress={dismissPending}
+                className="flex-1 items-center py-3 active:bg-black/5 dark:active:bg-white/5"
+              >
+                <Text className="text-sm font-medium text-ink-light/60 dark:text-ink-dark/60">Cancel</Text>
+              </Pressable>
+              <View className="w-px bg-black/5 dark:bg-white/10" />
+              <Pressable onPress={confirmCreate} className="flex-1 items-center py-3 active:bg-accent-500/10">
+                <Text className="text-sm font-semibold text-accent-600 dark:text-accent-300">Add</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
     </ScrollView>
   );
 }

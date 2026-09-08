@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
@@ -12,6 +12,44 @@ import {
   useDisconnectGoogleCalendar,
   useGoogleCalendarStatus,
 } from "@/lib/googleCalendar";
+import { useThemePreference, type ThemePreference } from "@/lib/theme";
+
+const THEME_OPTIONS: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: "light", label: "Light", icon: "sunny-outline" },
+  { key: "dark", label: "Dark", icon: "moon-outline" },
+  { key: "system", label: "System", icon: "phone-portrait-outline" },
+];
+
+function AppearanceCard() {
+  const { preference, setPreference } = useThemePreference();
+
+  return (
+    <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-3">
+        Appearance
+      </Text>
+      <View className="flex-row rounded-xl bg-surface-subtle dark:bg-white/[0.06] p-1 gap-1">
+        {THEME_OPTIONS.map((opt) => {
+          const active = preference === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              onPress={() => setPreference(opt.key)}
+              className={`flex-1 flex-row items-center justify-center gap-1.5 rounded-lg py-2 ${
+                active ? "bg-accent-500" : ""
+              }`}
+            >
+              <Ionicons name={opt.icon} size={14} color={active ? "white" : "#c9a08f"} />
+              <Text className={`text-xs font-medium ${active ? "text-white" : "text-ink-light/60 dark:text-ink-dark/60"}`}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
 
 function GuestUpgradeCard() {
   const [email, setEmail] = useState("");
@@ -101,6 +139,8 @@ export default function Settings() {
       <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark pt-4 mb-6">Settings</Text>
 
       {isGuest && <GuestUpgradeCard />}
+
+      <AppearanceCard />
 
       <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
         <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-2">
