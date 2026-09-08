@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { TaskList } from "@/components/TaskList";
 import { cyclePriority } from "@/lib/priority";
 import {
@@ -26,6 +27,7 @@ export default function Today() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggle = useToggleTaskCompletion();
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
 
   const dateObj = parseISO(selectedDate);
   const viewingToday = isToday(dateObj);
@@ -105,6 +107,7 @@ export default function Today() {
             onToggle={toggle}
             onDelete={remove}
             onCyclePriority={cycle}
+            onOpenDetail={setDetailTask}
           />
         </View>
       )}
@@ -116,6 +119,7 @@ export default function Today() {
           onToggle={toggle}
           onDelete={remove}
           onCyclePriority={cycle}
+          onOpenDetail={setDetailTask}
         />
       </View>
 
@@ -130,9 +134,19 @@ export default function Today() {
             onToggle={toggle}
             onDelete={remove}
             onCyclePriority={cycle}
+            onOpenDetail={setDetailTask}
           />
         </View>
       )}
+
+      <TaskDetailModal
+        task={detailTask}
+        onClose={() => setDetailTask(null)}
+        onDelete={(task) => {
+          deleteTask.mutate(task.id);
+          setDetailTask(null);
+        }}
+      />
     </ScrollView>
   );
 }

@@ -14,6 +14,7 @@ export function TaskList({
   onToggle,
   onDelete,
   onCyclePriority,
+  onOpenDetail,
 }: {
   tasks: Task[];
   emptyLabel: string;
@@ -21,6 +22,7 @@ export function TaskList({
   onToggle: (task: Task) => void;
   onDelete: (task: Task) => void;
   onCyclePriority: (task: Task) => void;
+  onOpenDetail?: (task: Task) => void;
 }) {
   const todayISO = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const updateTask = useUpdateTask();
@@ -47,6 +49,7 @@ export function TaskList({
           onCycleRecurrence={() =>
             updateTask.mutate({ id: task.id, patch: { recurrence: cycleRecurrence(task.recurrence) } })
           }
+          onOpenDetail={onOpenDetail}
         />
       ))}
     </View>

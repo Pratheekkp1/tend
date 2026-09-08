@@ -15,6 +15,7 @@ export function TaskItem({
   onDelete,
   onCyclePriority,
   onCycleRecurrence,
+  onOpenDetail,
 }: {
   task: Task;
   overdue?: boolean;
@@ -23,6 +24,7 @@ export function TaskItem({
   onDelete: () => void;
   onCyclePriority: () => void;
   onCycleRecurrence?: () => void;
+  onOpenDetail?: (task: Task) => void;
 }) {
   const hasMeta =
     task.notes || (showDueDate && task.due_date) || overdue || task.due_time || task.recurrence !== "none";
@@ -34,7 +36,11 @@ export function TaskItem({
       }`}
     >
       <Checkbox checked={task.completed} onToggle={onToggle} />
-      <View className="flex-1">
+      <Pressable
+        onPress={() => onOpenDetail?.(task)}
+        disabled={!onOpenDetail}
+        className="flex-1"
+      >
         <Text
           className={`text-base ${
             task.completed
@@ -67,7 +73,7 @@ export function TaskItem({
             ) : null}
           </View>
         )}
-      </View>
+      </Pressable>
       {onCycleRecurrence && (
         <Pressable
           onPress={onCycleRecurrence}

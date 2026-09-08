@@ -1,7 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format } from "date-fns";
+import { useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { QuickAddInput } from "./ui/QuickAddInput";
+import { TaskDetailModal } from "./TaskDetailModal";
 import { TaskList } from "./TaskList";
 import type { GoogleCalendarEvent, Priority, Recurrence, Task } from "@/types/task";
 
@@ -34,6 +36,8 @@ export function DayAgenda({
   onCyclePriority: (task: Task) => void;
   onClose?: () => void;
 }) {
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
+
   return (
     <ScrollView
       className="flex-1"
@@ -91,6 +95,7 @@ export function DayAgenda({
           onToggle={onToggle}
           onDelete={onDelete}
           onCyclePriority={onCyclePriority}
+          onOpenDetail={setDetailTask}
         />
       </View>
 
@@ -105,9 +110,19 @@ export function DayAgenda({
             onToggle={onToggle}
             onDelete={onDelete}
             onCyclePriority={onCyclePriority}
+            onOpenDetail={setDetailTask}
           />
         </View>
       )}
+
+      <TaskDetailModal
+        task={detailTask}
+        onClose={() => setDetailTask(null)}
+        onDelete={(task) => {
+          onDelete(task);
+          setDetailTask(null);
+        }}
+      />
     </ScrollView>
   );
 }

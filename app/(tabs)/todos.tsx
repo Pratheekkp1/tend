@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
+import { TaskDetailModal } from "@/components/TaskDetailModal";
 import { TaskList } from "@/components/TaskList";
 import { cyclePriority } from "@/lib/priority";
 import {
@@ -19,6 +21,7 @@ export default function Todos() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggle = useToggleTaskCompletion();
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
 
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
@@ -54,6 +57,7 @@ export default function Todos() {
           onToggle={toggle}
           onDelete={remove}
           onCyclePriority={cycle}
+          onOpenDetail={setDetailTask}
         />
       </View>
 
@@ -68,9 +72,19 @@ export default function Todos() {
             onToggle={toggle}
             onDelete={remove}
             onCyclePriority={cycle}
+            onOpenDetail={setDetailTask}
           />
         </View>
       )}
+
+      <TaskDetailModal
+        task={detailTask}
+        onClose={() => setDetailTask(null)}
+        onDelete={(task) => {
+          deleteTask.mutate(task.id);
+          setDetailTask(null);
+        }}
+      />
     </ScrollView>
   );
 }
