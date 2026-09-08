@@ -11,10 +11,11 @@ your behalf (they require your own accounts), so follow these steps once.
 2. In the dashboard, go to **SQL Editor** → paste the contents of
    [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) → **Run**.
    Then do the same, in order, for every other file in `supabase/migrations/`:
-   [`0002_add_priority.sql`](supabase/migrations/0002_add_priority.sql) (adds `priority`) and
+   [`0002_add_priority.sql`](supabase/migrations/0002_add_priority.sql) (adds `priority`),
    [`0003_time_and_recurrence.sql`](supabase/migrations/0003_time_and_recurrence.sql)
-   (adds `due_time`, `duration_minutes`, `recurrence`) — run any new migration file added
-   here later the same way, in filename order.
+   (adds `due_time`, `duration_minutes`, `recurrence`), and
+   [`0004_subtasks.sql`](supabase/migrations/0004_subtasks.sql) (adds the `subtasks` table) —
+   run any new migration file added here later the same way, in filename order.
    This creates the `tasks` and `google_calendar_tokens` tables with row-level
    security so each user only ever sees their own data.
 3. Go to **Project Settings → API** and copy:

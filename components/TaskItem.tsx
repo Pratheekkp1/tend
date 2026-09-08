@@ -4,6 +4,7 @@ import { Pressable, Text, View } from "react-native";
 import { Checkbox } from "./ui/Checkbox";
 import { PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { RECURRENCE_LABEL } from "@/lib/recurrence";
+import { useSubtaskCounts } from "@/lib/subtasks";
 import { formatTime12h } from "@/lib/time";
 import type { Task } from "@/types/task";
 
@@ -26,8 +27,17 @@ export function TaskItem({
   onCycleRecurrence?: () => void;
   onOpenDetail?: (task: Task) => void;
 }) {
+  const { data: subtaskCounts } = useSubtaskCounts();
+  const subtaskProgress = subtaskCounts?.[task.id];
+  const hasSubtasks = Boolean(subtaskProgress && subtaskProgress.total > 0);
+
   const hasMeta =
-    task.notes || (showDueDate && task.due_date) || overdue || task.due_time || task.recurrence !== "none";
+    task.notes ||
+    (showDueDate && task.due_date) ||
+    overdue ||
+    task.due_time ||
+    task.recurrence !== "none" ||
+    hasSubtasks;
 
   return (
     <View
@@ -65,6 +75,11 @@ export function TaskItem({
             )}
             {task.recurrence !== "none" && (
               <Ionicons name="repeat" size={12} color="#5f7d76" />
+            )}
+            {hasSubtasks && (
+              <Text className="text-xs text-ink-light/45 dark:text-ink-dark/45">
+                {subtaskProgress!.done}/{subtaskProgress!.total}
+              </Text>
             )}
             {task.notes ? (
               <Text className="text-sm text-ink-light/45 dark:text-ink-dark/45 flex-1" numberOfLines={1}>

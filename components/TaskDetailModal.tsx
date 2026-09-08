@@ -2,11 +2,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { addDays, format, parseISO } from "date-fns";
 import { useEffect, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Checkbox } from "./ui/Checkbox";
 import { TextField } from "./ui/TextField";
 import { TimePickerButton } from "./ui/TimePickerButton";
 import { glassBlur } from "@/lib/glass";
 import { cyclePriority, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { cycleRecurrence, RECURRENCE_LABEL } from "@/lib/recurrence";
+import { useCreateSubtask, useDeleteSubtask, useSubtasks, useToggleSubtask } from "@/lib/subtasks";
 import { formatTime12h } from "@/lib/time";
 import { useUpdateTask } from "@/lib/tasks";
 import type { Task, TaskUpdate } from "@/types/task";
@@ -201,6 +203,11 @@ export function TaskDetailModal({
               </View>
             )}
 
+            <View>
+              <Text className={FIELD_LABEL}>Subtasks</Text>
+              <SubtasksSection taskId={current.id} />
+            </View>
+
             <View className="flex-row items-center justify-between">
               <Text className={FIELD_LABEL}>Priority</Text>
               <Pressable
@@ -246,6 +253,51 @@ export function TaskDetailModal({
         </Pressable>
       </Pressable>
     </Modal>
+  );
+}
+
+function SubtasksSection({ taskId }: { taskId: string }) {
+  const { data: subtasks = [] } = useSubtasks(taskId);
+  const createSubtask = useCreateSubtask();
+  const toggleSubtask = useToggleSubtask();
+  const deleteSubtask = useDeleteSubtask();
+  const [title, setTitle] = useState("");
+
+  const addSubtask = () => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    createSubtask.mutate({ task_id: taskId, title: trimmed });
+    setTitle("");
+  };
+
+  return (
+    <View className="gap-2">
+      {subtasks.map((subtask) => (
+        <View key={subtask.id} className="flex-row items-center gap-2.5">
+          <Checkbox checked={subtask.completed} onToggle={() => toggleSubtask.mutate(subtask)} />
+          <Text
+            className={`flex-1 text-sm ${
+              subtask.completed
+                ? "text-ink-light/35 dark:text-ink-dark/35 line-through"
+                : "text-ink-light dark:text-ink-dark"
+            }`}
+          >
+            {subtask.title}
+          </Text>
+          <Pressable onPress={() => deleteSubtask.mutate(subtask.id)} hitSlop={8} className="p-1">
+            <Ionicons name="trash-outline" size={16} color="#b0a08f" />
+          </Pressable>
+        </View>
+      ))}
+      <TextField
+        value={title}
+        onChangeText={setTitle}
+        onSubmitEditing={addSubtask}
+        placeholder="Add a subtask"
+        returnKeyType="done"
+        className="py-2"
+      />
+    </View>
   );
 }
 
