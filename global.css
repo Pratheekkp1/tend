@@ -5,10 +5,10 @@
 /* Web only: match the app background at the document level so there's never
    a flash/strip of the browser's default white behind or above the app. */
 html, body, #root {
-  background-color: #f7ede2;
+  background-color: #ffffff;
 }
 @media (prefers-color-scheme: dark) {
   html, body, #root {
-    background-color: #241f1c;
+    background-color: #0f0f11;
   }
 }
