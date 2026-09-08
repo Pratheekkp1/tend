@@ -15,6 +15,7 @@ import {
   useToggleTaskCompletion,
   useUpdateTask,
 } from "@/lib/tasks";
+import { useUndoToast } from "@/lib/undoToast";
 import type { Task } from "@/types/task";
 
 export default function Today() {
@@ -27,6 +28,7 @@ export default function Today() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggle = useToggleTaskCompletion();
+  const { notifyDeleted } = useUndoToast();
   const [detailTask, setDetailTask] = useState<Task | null>(null);
 
   const dateObj = parseISO(selectedDate);
@@ -37,7 +39,10 @@ export default function Today() {
   const pending = tasks.filter((t) => !t.completed);
   const completed = tasks.filter((t) => t.completed);
 
-  const remove = (task: Task) => deleteTask.mutate(task.id);
+  const remove = (task: Task) => {
+    deleteTask.mutate(task.id);
+    notifyDeleted(task);
+  };
   const cycle = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
 
@@ -144,6 +149,7 @@ export default function Today() {
         onClose={() => setDetailTask(null)}
         onDelete={(task) => {
           deleteTask.mutate(task.id);
+          notifyDeleted(task);
           setDetailTask(null);
         }}
       />

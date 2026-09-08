@@ -9,6 +9,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppBackground } from "@/components/AppBackground";
 import { AuthProvider } from "@/lib/auth-context";
 import { hydrateThemePreference } from "@/lib/theme";
+import { UndoToastProvider } from "@/lib/undoToast";
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
@@ -33,12 +34,14 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <StatusBar style={isDark ? "light" : "dark"} />
-            <ThemeProvider value={isDark ? TransparentDark : TransparentLight}>
-              <AppBackground>
-                <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }} />
-              </AppBackground>
-            </ThemeProvider>
+            <UndoToastProvider>
+              <StatusBar style={isDark ? "light" : "dark"} />
+              <ThemeProvider value={isDark ? TransparentDark : TransparentLight}>
+                <AppBackground>
+                  <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "transparent" } }} />
+                </AppBackground>
+              </ThemeProvider>
+            </UndoToastProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

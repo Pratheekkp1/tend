@@ -13,6 +13,7 @@ import {
   useToggleTaskCompletion,
   useUpdateTask,
 } from "@/lib/tasks";
+import { useUndoToast } from "@/lib/undoToast";
 import type { Task } from "@/types/task";
 
 export default function Todos() {
@@ -24,6 +25,7 @@ export default function Todos() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggle = useToggleTaskCompletion();
+  const { notifyDeleted } = useUndoToast();
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [activeTagId, setActiveTagId] = useState<string | null>(null);
 
@@ -34,7 +36,10 @@ export default function Todos() {
   const pending = filtered.filter((t) => !t.completed);
   const completed = filtered.filter((t) => t.completed);
 
-  const remove = (task: Task) => deleteTask.mutate(task.id);
+  const remove = (task: Task) => {
+    deleteTask.mutate(task.id);
+    notifyDeleted(task);
+  };
   const cycle = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
 
@@ -121,6 +126,7 @@ export default function Todos() {
         onClose={() => setDetailTask(null)}
         onDelete={(task) => {
           deleteTask.mutate(task.id);
+          notifyDeleted(task);
           setDetailTask(null);
         }}
       />

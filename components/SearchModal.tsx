@@ -7,6 +7,7 @@ import { TextField } from "./ui/TextField";
 import { glassBlur } from "@/lib/glass";
 import { cyclePriority } from "@/lib/priority";
 import { useDeleteTask, useSearchTasks, useToggleTaskCompletion, useUpdateTask } from "@/lib/tasks";
+import { useUndoToast } from "@/lib/undoToast";
 import type { Task } from "@/types/task";
 
 export function SearchModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
@@ -19,6 +20,7 @@ export function SearchModal({ visible, onClose }: { visible: boolean; onClose: (
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggle = useToggleTaskCompletion();
+  const { notifyDeleted } = useUndoToast();
 
   if (!visible) return null;
 
@@ -28,7 +30,10 @@ export function SearchModal({ visible, onClose }: { visible: boolean; onClose: (
     onClose();
   };
 
-  const remove = (task: Task) => deleteTask.mutate(task.id);
+  const remove = (task: Task) => {
+    deleteTask.mutate(task.id);
+    notifyDeleted(task);
+  };
   const cycle = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
 
@@ -77,6 +82,7 @@ export function SearchModal({ visible, onClose }: { visible: boolean; onClose: (
         onClose={() => setDetailTask(null)}
         onDelete={(task) => {
           deleteTask.mutate(task.id);
+          notifyDeleted(task);
           setDetailTask(null);
         }}
       />

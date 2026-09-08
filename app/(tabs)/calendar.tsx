@@ -23,6 +23,7 @@ import {
   useToggleTaskCompletion,
   useUpdateTask,
 } from "@/lib/tasks";
+import { useUndoToast } from "@/lib/undoToast";
 import type { Task } from "@/types/task";
 
 const ACCENT = "#f28482";
@@ -66,8 +67,12 @@ export default function CalendarScreen() {
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const toggleTask = useToggleTaskCompletion();
+  const { notifyDeleted } = useUndoToast();
 
-  const removeTask = (task: Task) => deleteTask.mutate(task.id);
+  const removeTask = (task: Task) => {
+    deleteTask.mutate(task.id);
+    notifyDeleted(task);
+  };
   const cycleTaskPriority = (task: Task) =>
     updateTask.mutate({ id: task.id, patch: { priority: cyclePriority(task.priority) } });
 
