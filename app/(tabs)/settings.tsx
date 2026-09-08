@@ -12,7 +12,22 @@ import {
   useDisconnectGoogleCalendar,
   useGoogleCalendarStatus,
 } from "@/lib/googleCalendar";
+import { useCreateTag, useDeleteTag, useTags } from "@/lib/tags";
 import { useThemePreference, type ThemePreference } from "@/lib/theme";
+
+// Warm, mutually-distinguishable swatch set for user-created tags -- the
+// app's four theme hues (coral/gold/sage/blush) plus a few more distinct
+// ones, since tags need more visual variety than the fixed design palette.
+const TAG_SWATCHES = [
+  "#f28482", // coral
+  "#f6bd60", // gold
+  "#84a59d", // sage
+  "#e8a89f", // blush
+  "#b8a9d9", // lavender
+  "#7ea8c4", // sky
+  "#c97b63", // terracotta
+  "#9caf65", // moss
+];
 
 const THEME_OPTIONS: { key: ThemePreference; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
   { key: "light", label: "Light", icon: "sunny-outline" },
@@ -46,6 +61,97 @@ function AppearanceCard() {
             </Pressable>
           );
         })}
+      </View>
+    </View>
+  );
+}
+
+function TagsCard() {
+  const { data: tags = [] } = useTags();
+  const createTag = useCreateTag();
+  const deleteTag = useDeleteTag();
+  const [name, setName] = useState("");
+  const [color, setColor] = useState(TAG_SWATCHES[0]);
+  const [error, setError] = useState<string | null>(null);
+
+  const addTag = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    createTag.mutate(
+      { name: trimmed, color },
+      {
+        onSuccess: () => {
+          setName("");
+          setColor(TAG_SWATCHES[0]);
+          setError(null);
+        },
+        onError: (err) => {
+          const code = (err as unknown as { code?: string })?.code;
+          setError(
+            code === "23505" ? "You already have a tag with that name" : "Couldn't create that tag"
+          );
+        },
+      }
+    );
+  };
+
+  return (
+    <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
+      <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-3">
+        Tags
+      </Text>
+
+      {tags.length > 0 && (
+        <View className="flex-row flex-wrap gap-2 mb-3">
+          {tags.map((tag) => (
+            <View
+              key={tag.id}
+              className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
+              style={{ backgroundColor: `${tag.color}26` }}
+            >
+              <View className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+              <Text className="text-xs font-medium text-ink-light dark:text-ink-dark">{tag.name}</Text>
+              <Pressable onPress={() => deleteTag.mutate(tag.id)} hitSlop={8}>
+                <Ionicons name="close" size={12} color="#7a6f63" />
+              </Pressable>
+            </View>
+          ))}
+        </View>
+      )}
+
+      <View className="gap-2.5">
+        <TextField
+          value={name}
+          onChangeText={(t) => {
+            setName(t);
+            setError(null);
+          }}
+          onSubmitEditing={addTag}
+          placeholder="New tag name"
+          returnKeyType="done"
+        />
+        <View className="flex-row flex-wrap gap-2">
+          {TAG_SWATCHES.map((swatch) => (
+            <Pressable
+              key={swatch}
+              onPress={() => setColor(swatch)}
+              accessibilityLabel={`Select color ${swatch}`}
+              className={`h-7 w-7 items-center justify-center rounded-full ${
+                color === swatch ? "border-2 border-ink-light dark:border-ink-dark" : ""
+              }`}
+              style={{ backgroundColor: swatch }}
+            >
+              {color === swatch && <Ionicons name="checkmark" size={14} color="white" />}
+            </Pressable>
+          ))}
+        </View>
+        <Button
+          label="Add tag"
+          size="sm"
+          onPress={addTag}
+          disabled={!name.trim() || createTag.isPending}
+        />
+        {error ? <Text className="text-xs text-red-500">{error}</Text> : null}
       </View>
     </View>
   );
@@ -141,6 +247,8 @@ export default function Settings() {
       {isGuest && <GuestUpgradeCard />}
 
       <AppearanceCard />
+
+      <TagsCard />
 
       <View className="rounded-2xl bg-white/70 dark:bg-surface-dark-subtle/70 border border-accent-900/5 dark:border-white/5 p-4 mb-4">
         <Text className="text-xs font-semibold uppercase tracking-wide text-ink-light/45 dark:text-ink-dark/45 mb-2">

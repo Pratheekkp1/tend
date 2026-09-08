@@ -5,6 +5,7 @@ import { Checkbox } from "./ui/Checkbox";
 import { PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { RECURRENCE_LABEL } from "@/lib/recurrence";
 import { useSubtaskCounts } from "@/lib/subtasks";
+import { useAllTaskTags } from "@/lib/tags";
 import { formatTime12h } from "@/lib/time";
 import type { Task } from "@/types/task";
 
@@ -31,13 +32,17 @@ export function TaskItem({
   const subtaskProgress = subtaskCounts?.[task.id];
   const hasSubtasks = Boolean(subtaskProgress && subtaskProgress.total > 0);
 
+  const { data: taskTags } = useAllTaskTags();
+  const tags = taskTags?.[task.id] ?? [];
+
   const hasMeta =
     task.notes ||
     (showDueDate && task.due_date) ||
     overdue ||
     task.due_time ||
     task.recurrence !== "none" ||
-    hasSubtasks;
+    hasSubtasks ||
+    tags.length > 0;
 
   return (
     <View
@@ -80,6 +85,16 @@ export function TaskItem({
               <Text className="text-xs text-ink-light/45 dark:text-ink-dark/45">
                 {subtaskProgress!.done}/{subtaskProgress!.total}
               </Text>
+            )}
+            {tags.length > 0 && (
+              <View className="flex-row items-center gap-1.5">
+                {tags.map((tag) => (
+                  <View key={tag.id} className="flex-row items-center gap-1">
+                    <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                    <Text className="text-xs text-ink-light/45 dark:text-ink-dark/45">{tag.name}</Text>
+                  </View>
+                ))}
+              </View>
             )}
             {task.notes ? (
               <Text className="text-sm text-ink-light/45 dark:text-ink-dark/45 flex-1" numberOfLines={1}>

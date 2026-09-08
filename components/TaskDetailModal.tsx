@@ -9,6 +9,7 @@ import { glassBlur } from "@/lib/glass";
 import { cyclePriority, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { cycleRecurrence, RECURRENCE_LABEL } from "@/lib/recurrence";
 import { useCreateSubtask, useDeleteSubtask, useSubtasks, useToggleSubtask } from "@/lib/subtasks";
+import { useAssignTag, useTags, useTaskTags, useUnassignTag } from "@/lib/tags";
 import { formatTime12h } from "@/lib/time";
 import { useUpdateTask } from "@/lib/tasks";
 import type { Task, TaskUpdate } from "@/types/task";
@@ -208,6 +209,11 @@ export function TaskDetailModal({
               <SubtasksSection taskId={current.id} />
             </View>
 
+            <View>
+              <Text className={FIELD_LABEL}>Tags</Text>
+              <TagsSection taskId={current.id} />
+            </View>
+
             <View className="flex-row items-center justify-between">
               <Text className={FIELD_LABEL}>Priority</Text>
               <Pressable
@@ -297,6 +303,56 @@ function SubtasksSection({ taskId }: { taskId: string }) {
         returnKeyType="done"
         className="py-2"
       />
+    </View>
+  );
+}
+
+function TagsSection({ taskId }: { taskId: string }) {
+  const { data: assigned = [] } = useTaskTags(taskId);
+  const { data: allTags = [] } = useTags();
+  const assignTag = useAssignTag();
+  const unassignTag = useUnassignTag();
+
+  const assignedIds = new Set(assigned.map((tag) => tag.id));
+  const unassigned = allTags.filter((tag) => !assignedIds.has(tag.id));
+
+  if (allTags.length === 0) {
+    return <Text className="text-sm text-ink-light/45 dark:text-ink-dark/45">Create tags in Settings</Text>;
+  }
+
+  return (
+    <View className="gap-2">
+      {assigned.length > 0 && (
+        <View className="flex-row flex-wrap gap-2">
+          {assigned.map((tag) => (
+            <Pressable
+              key={tag.id}
+              onPress={() => unassignTag.mutate({ task_id: taskId, tag_id: tag.id })}
+              className="flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
+              style={{ backgroundColor: `${tag.color}26` }}
+            >
+              <View className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+              <Text className="text-xs font-medium text-ink-light dark:text-ink-dark">{tag.name}</Text>
+              <Ionicons name="close" size={12} color="#7a6f63" />
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {unassigned.length > 0 && (
+        <View className="flex-row flex-wrap gap-2">
+          {unassigned.map((tag) => (
+            <Pressable
+              key={tag.id}
+              onPress={() => assignTag.mutate({ task_id: taskId, tag_id: tag.id })}
+              className="flex-row items-center gap-1.5 rounded-full border border-dashed px-3 py-1.5"
+              style={{ borderColor: tag.color }}
+            >
+              <Ionicons name="add" size={12} color={tag.color} />
+              <Text className="text-xs font-medium text-ink-light/70 dark:text-ink-dark/70">{tag.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
