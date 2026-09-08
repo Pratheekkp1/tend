@@ -79,6 +79,27 @@ export function useTasksInRange(startISO: string, endISO: string) {
   return { data: inRange, ...rest };
 }
 
+/** Case-insensitive substring match against title/notes, sorted with title
+ * matches ahead of notes-only matches. Empty query returns no results rather
+ * than the whole task list. */
+export function useSearchTasks(query: string) {
+  const { data, ...rest } = useAllTasks();
+  const needle = query.trim().toLowerCase();
+
+  if (!needle) return { data: [], ...rest };
+
+  const titleMatch = (t: Task) => t.title.toLowerCase().includes(needle);
+  const matches = (data ?? []).filter(
+    (t) => titleMatch(t) || (t.notes ?? "").toLowerCase().includes(needle)
+  );
+  matches.sort((a, b) => {
+    const byTitle = Number(titleMatch(b)) - Number(titleMatch(a));
+    return byTitle !== 0 ? byTitle : compareTasks(a, b);
+  });
+
+  return { data: matches, ...rest };
+}
+
 /** Incomplete tasks whose due date is strictly before `beforeISO` (defaults to today). */
 export function useOverdueTasks(beforeISO?: string) {
   const cutoff = beforeISO ?? format(new Date(), "yyyy-MM-dd");

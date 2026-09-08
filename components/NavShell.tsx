@@ -1,8 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Link, usePathname } from "expo-router";
 import type { ReactNode } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { SearchModal } from "./SearchModal";
 import { glassBlur } from "@/lib/glass";
 
 const WIDE_BREAKPOINT = 768;
@@ -21,6 +23,25 @@ export function NavShell({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const isWide = width >= WIDE_BREAKPOINT;
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Web-only "/" shortcut, like Slack/Linear/Gmail. Skipped while a text
+  // input already has focus so it doesn't hijack typing in the quick-add
+  // bar or a task title.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      setSearchOpen(true);
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   if (isWide) {
     return (
@@ -29,9 +50,17 @@ export function NavShell({ children }: { children: ReactNode }) {
           style={{ paddingTop: insets.top + 24, width: 240, ...glassBlur }}
           className="border-r border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-4"
         >
-          <Text className="px-2 mb-8 text-lg font-bold text-ink-light dark:text-ink-dark">
-            Tend
-          </Text>
+          <View className="mb-8 flex-row items-center justify-between px-2">
+            <Text className="text-lg font-bold text-ink-light dark:text-ink-dark">Tend</Text>
+            <Pressable
+              onPress={() => setSearchOpen(true)}
+              hitSlop={8}
+              className="h-8 w-8 items-center justify-center rounded-full active:bg-accent-500/10"
+              accessibilityLabel="Search tasks"
+            >
+              <Ionicons name="search" size={18} color={INACTIVE} />
+            </Pressable>
+          </View>
           <View className="gap-1">
             {NAV_ITEMS.map((item) => {
               const active = pathname.startsWith(item.href.replace("/(tabs)", ""));
@@ -61,13 +90,26 @@ export function NavShell({ children }: { children: ReactNode }) {
           </View>
         </View>
         <View className="flex-1">{children}</View>
+        <SearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
       </View>
     );
   }
 
   return (
     <View className="flex-1">
-      <View className="flex-1">{children}</View>
+      <View className="flex-1">
+        {children}
+        {/* Bottom-right, not top-right: every screen already puts its own
+         * controls (date steppers, etc.) in the top-right corner, so a
+         * floating trigger there would collide. This corner stays clear. */}
+        <Pressable
+          onPress={() => setSearchOpen(true)}
+          className="absolute bottom-4 right-4 h-12 w-12 items-center justify-center rounded-full bg-accent-500"
+          accessibilityLabel="Search tasks"
+        >
+          <Ionicons name="search" size={20} color="white" />
+        </Pressable>
+      </View>
       <View
         style={{ paddingBottom: insets.bottom || 8, ...glassBlur }}
         className="flex-row border-t border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/[0.04]"
@@ -94,6 +136,7 @@ export function NavShell({ children }: { children: ReactNode }) {
           );
         })}
       </View>
+      <SearchModal visible={searchOpen} onClose={() => setSearchOpen(false)} />
     </View>
   );
 }
