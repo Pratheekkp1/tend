@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { format, parseISO } from "date-fns";
-import { Pressable, Text, View } from "react-native";
+import { PanResponder, Pressable, Text, View } from "react-native";
 import { Checkbox } from "./ui/Checkbox";
 import { PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { RECURRENCE_LABEL } from "@/lib/recurrence";
@@ -18,6 +18,10 @@ export function TaskItem({
   onCyclePriority,
   onCycleRecurrence,
   onOpenDetail,
+  reorderable = false,
+  onDragGrant,
+  onDragMove,
+  onDragRelease,
 }: {
   task: Task;
   overdue?: boolean;
@@ -27,6 +31,10 @@ export function TaskItem({
   onCyclePriority: () => void;
   onCycleRecurrence?: () => void;
   onOpenDetail?: (task: Task) => void;
+  reorderable?: boolean;
+  onDragGrant?: () => void;
+  onDragMove?: (dy: number) => void;
+  onDragRelease?: () => void;
 }) {
   const { data: subtaskCounts } = useSubtaskCounts();
   const subtaskProgress = subtaskCounts?.[task.id];
@@ -44,12 +52,28 @@ export function TaskItem({
     hasSubtasks ||
     tags.length > 0;
 
+  const dragResponder = reorderable
+    ? PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: () => onDragGrant?.(),
+        onPanResponderMove: (_e, gestureState) => onDragMove?.(gestureState.dy),
+        onPanResponderRelease: () => onDragRelease?.(),
+        onPanResponderTerminate: () => onDragRelease?.(),
+      })
+    : null;
+
   return (
     <View
       className={`flex-row items-center gap-3 rounded-xl bg-white/70 dark:bg-surface-dark-subtle/70 px-4 py-3 border ${
         overdue ? "border-accent-500/40" : "border-accent-900/5 dark:border-white/5"
       }`}
     >
+      {reorderable && (
+        <View {...(dragResponder ? dragResponder.panHandlers : {})} hitSlop={8} className="p-1 -ml-1">
+          <Ionicons name="reorder-three-outline" size={18} color="#cbb9ad" />
+        </View>
+      )}
       <Checkbox checked={task.completed} onToggle={onToggle} />
       <Pressable
         onPress={() => onOpenDetail?.(task)}

@@ -135,9 +135,19 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: async (task: NewTask) => {
       if (!userId) throw new Error("Not signed in");
+      const dueDate = task.due_date ?? null;
+      const priority = task.priority ?? "none";
+      // Appends to the end of the task's own (due_date bucket, priority tier)
+      // rather than tying at the DB default of 0, so `compareTasks`'s
+      // position tiebreaker has real values to sort new tasks after existing ones.
+      const siblings = queryClient.getQueryData<Task[]>(tasksKey(userId)) ?? [];
+      const maxPosition = siblings
+        .filter((t) => (t.due_date ?? null) === dueDate && t.priority === priority)
+        .reduce((max, t) => Math.max(max, t.position), -1);
+
       const { data, error } = await supabase
         .from("tasks")
-        .insert({ ...task, user_id: userId })
+        .insert({ position: maxPosition + 1, ...task, user_id: userId })
         .select()
         .single();
       if (error) throw error;
@@ -211,6 +221,27 @@ export function useDeleteTask() {
     },
     onSuccess: (_data, id) => {
       cancelTaskReminder(id);
+      queryClient.invalidateQueries({ queryKey: tasksKey(userId) });
+    },
+  });
+}
+
+/** Persists a drag-to-reorder within one priority tier: `orderedIds` becomes
+ * each task's new `position`, index for index. */
+export function useReorderTasks() {
+  const { session } = useAuth();
+  const userId = session?.user.id;
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      const results = await Promise.all(
+        orderedIds.map((id, index) => supabase.from("tasks").update({ position: index }).eq("id", id))
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
+    },
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tasksKey(userId) });
     },
   });

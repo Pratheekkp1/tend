@@ -10,6 +10,7 @@ import {
   useCreateTask,
   useDeleteTask,
   useGeneralTasks,
+  useReorderTasks,
   useToggleTaskCompletion,
   useUpdateTask,
 } from "@/lib/tasks";
@@ -24,6 +25,7 @@ export default function Todos() {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
+  const reorderTasks = useReorderTasks();
   const toggle = useToggleTaskCompletion();
   const { notifyDeleted } = useUndoToast();
   const [detailTask, setDetailTask] = useState<Task | null>(null);
@@ -102,6 +104,7 @@ export default function Todos() {
           onDelete={remove}
           onCyclePriority={cycle}
           onOpenDetail={setDetailTask}
+          onReorder={(orderedIds) => reorderTasks.mutate(orderedIds)}
         />
       </View>
 
