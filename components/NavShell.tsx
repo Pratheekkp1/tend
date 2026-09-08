@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Link, usePathname } from "expo-router";
+import { Link, usePathname, useRouter } from "expo-router";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
@@ -22,26 +22,45 @@ export function NavShell({ children }: { children: ReactNode }) {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
+  const router = useRouter();
   const isWide = width >= WIDE_BREAKPOINT;
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // Web-only "/" shortcut, like Slack/Linear/Gmail. Skipped while a text
-  // input already has focus so it doesn't hijack typing in the quick-add
-  // bar or a task title.
+  // Web-only shortcuts, like Slack/Linear/Gmail. Skipped while a text input
+  // already has focus so they don't hijack typing in the quick-add bar or a
+  // task title -- "/" opens search, "1"-"4" jump to a tab (positionally
+  // matching the nav order, not letters, so it needs no memorized mapping).
   useEffect(() => {
     if (Platform.OS !== "web") return;
 
+    const NAV_KEYS: Record<string, (typeof NAV_ITEMS)[number]["href"]> = {
+      "1": "/(tabs)/today",
+      "2": "/(tabs)/calendar",
+      "3": "/(tabs)/todos",
+      "4": "/(tabs)/settings",
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "/") return;
       const tag = document.activeElement?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
-      e.preventDefault();
-      setSearchOpen(true);
+
+      if (e.key === "/") {
+        e.preventDefault();
+        setSearchOpen(true);
+        return;
+      }
+
+      const href = NAV_KEYS[e.key];
+      if (href) {
+        e.preventDefault();
+        setSearchOpen(false);
+        router.push(href as never);
+      }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [router]);
 
   if (isWide) {
     return (

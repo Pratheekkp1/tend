@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
 import { TimePickerButton } from "./TimePickerButton";
 import { cyclePriority, detectPriorityFromTitle, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { cycleRecurrence, RECURRENCE_SHORT_LABEL } from "@/lib/recurrence";
@@ -16,6 +16,26 @@ export function QuickAddInput({
 }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // Web-only "n" shortcut, scoped to whichever screen's quick-add is
+  // currently mounted -- each screen owns exactly one of these, so no
+  // cross-component registry is needed. Skipped while any text input
+  // already has focus so plain typing (including "n") is never hijacked.
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "n") return;
+      const tag = document.activeElement?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
   // null = follow auto-detection from the title; once the user taps the
   // flag/clock/repeat controls, that pins an explicit choice.
   const [manualPriority, setManualPriority] = useState<Priority | null>(null);
@@ -49,6 +69,7 @@ export function QuickAddInput({
       >
         <Ionicons name="add" size={20} color="#c98a9c" />
         <TextInput
+          ref={inputRef}
           value={value}
           onChangeText={(text) => {
             setValue(text);
