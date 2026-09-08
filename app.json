@@ -25,7 +25,13 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "shortName": "Tend",
+      "themeColor": "#f28482",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "description": "Your calendar and to-dos, in sync everywhere.",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-router",
