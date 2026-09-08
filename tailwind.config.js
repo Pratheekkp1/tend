@@ -42,14 +42,14 @@ module.exports = {
           500: "#e8a89f",
         },
         surface: {
-          light: "#fefbf8",
-          subtle: "#f7ede2",
-          dark: "#241f1c",
-          "dark-subtle": "#2e2721",
+          light: "#ffffff",
+          subtle: "#f7f5f1",
+          dark: "#0f0f11",
+          "dark-subtle": "#1c1d20",
         },
         ink: {
-          light: "#4a3f37",
-          dark: "#f7ede2",
+          light: "#33302c",
+          dark: "#f1efec",
         },
       },
       fontFamily: {

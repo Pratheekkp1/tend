@@ -1,11 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
+import { TimePickerButton } from "./TimePickerButton";
 import { cyclePriority, detectPriorityFromTitle, PRIORITY_COLOR, PRIORITY_LABEL } from "@/lib/priority";
 import { cycleRecurrence, RECURRENCE_SHORT_LABEL } from "@/lib/recurrence";
 import { detectTimeFromTitle, formatTime12h } from "@/lib/time";
-
-const TIME_PRESETS: (string | null)[] = [null, "09:00", "12:00", "15:00", "18:00"];
 import type { Priority, Recurrence } from "@/types/task";
 
 export function QuickAddInput({
@@ -16,6 +15,7 @@ export function QuickAddInput({
   onSubmit: (title: string, priority: Priority, dueTime: string | null, recurrence: Recurrence) => void;
 }) {
   const [value, setValue] = useState("");
+  const [focused, setFocused] = useState(false);
   // null = follow auto-detection from the title; once the user taps the
   // flag/clock/repeat controls, that pins an explicit choice.
   const [manualPriority, setManualPriority] = useState<Priority | null>(null);
@@ -42,7 +42,11 @@ export function QuickAddInput({
 
   return (
     <View className="gap-1.5">
-      <View className="flex-row items-center rounded-xl bg-white/70 dark:bg-white/10 border border-accent-900/5 dark:border-white/5 px-3">
+      <View
+        className={`flex-row items-center rounded-xl bg-white/70 dark:bg-white/10 border px-3 ${
+          focused ? "border-accent-400" : "border-accent-900/5 dark:border-white/5"
+        }`}
+      >
         <Ionicons name="add" size={20} color="#c98a9c" />
         <TextInput
           value={value}
@@ -55,8 +59,11 @@ export function QuickAddInput({
           placeholder={placeholder}
           placeholderTextColor="#c9a0ad"
           onSubmitEditing={submit}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           returnKeyType="done"
           className="flex-1 px-2 py-3 text-base text-ink-light dark:text-ink-dark"
+          style={{ outlineStyle: "none", outlineWidth: 0 } as never}
         />
         <Pressable
           onPress={() => setRecurrence(cycleRecurrence(recurrence))}
@@ -70,21 +77,7 @@ export function QuickAddInput({
             color={recurrence === "none" ? "#c9a0ad" : "#84a59d"}
           />
         </Pressable>
-        <Pressable
-          onPress={() => {
-            const idx = TIME_PRESETS.indexOf(dueTime);
-            setManualTime(TIME_PRESETS[(idx + 1) % TIME_PRESETS.length]);
-          }}
-          hitSlop={8}
-          className="p-1.5"
-          accessibilityLabel="Set time"
-        >
-          <Ionicons
-            name={dueTime ? "time" : "time-outline"}
-            size={18}
-            color={dueTime ? "#f6bd60" : "#c9a0ad"}
-          />
-        </Pressable>
+        <TimePickerButton value={dueTime} onChange={setManualTime} />
         <Pressable
           onPress={() => setManualPriority(cyclePriority(priority))}
           hitSlop={8}

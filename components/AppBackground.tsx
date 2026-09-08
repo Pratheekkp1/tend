@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { useColorScheme, View } from "react-native";
 
-const LIGHT_BG = "#f7ede2";
-const DARK_BG = "#241f1c";
+const LIGHT_BG = "#ffffff";
+const DARK_BG = "#0f0f11";
 
 /** Flat, calm backdrop mounted once behind every route. Deliberately plain. */
 export function AppBackground({ children }: { children: ReactNode }) {

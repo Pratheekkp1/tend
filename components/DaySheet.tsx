@@ -9,6 +9,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
+import { glassBlur } from "@/lib/glass";
 
 /** A bottom sheet that slides up over the calendar. Swipe down or tap the
  * backdrop to dismiss. Plain absolutely-positioned overlay rather than RN's
@@ -61,7 +62,10 @@ export function DaySheet({
       </Animated.View>
       <GestureDetector gesture={pan}>
         <Animated.View style={[{ height: sheetHeight }, sheetStyle]}>
-          <View className="flex-1 rounded-t-3xl bg-surface-light dark:bg-surface-dark-subtle overflow-hidden">
+          <View
+            className="flex-1 rounded-t-3xl bg-surface-light dark:bg-surface-dark-subtle/85 overflow-hidden"
+            style={glassBlur}
+          >
             <View className="items-center pt-3 pb-1">
               <View className="h-1.5 w-10 rounded-full bg-accent-900/15 dark:bg-white/15" />
             </View>

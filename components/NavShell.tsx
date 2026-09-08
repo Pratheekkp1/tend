@@ -3,6 +3,7 @@ import { Link, usePathname } from "expo-router";
 import type { ReactNode } from "react";
 import { Pressable, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { glassBlur } from "@/lib/glass";
 
 const WIDE_BREAKPOINT = 768;
 const ACCENT = "#f28482";
@@ -25,8 +26,8 @@ export function NavShell({ children }: { children: ReactNode }) {
     return (
       <View className="flex-1 flex-row">
         <View
-          style={{ paddingTop: insets.top + 24, width: 240 }}
-          className="border-r border-accent-900/10 dark:border-white/10 bg-white/40 dark:bg-black/10 px-4"
+          style={{ paddingTop: insets.top + 24, width: 240, ...glassBlur }}
+          className="border-r border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-4"
         >
           <Text className="px-2 mb-8 text-lg font-bold text-ink-light dark:text-ink-dark">
             Productivity
@@ -68,8 +69,8 @@ export function NavShell({ children }: { children: ReactNode }) {
     <View className="flex-1">
       <View className="flex-1">{children}</View>
       <View
-        style={{ paddingBottom: insets.bottom || 8 }}
-        className="flex-row border-t border-accent-900/10 dark:border-white/10 bg-white/40 dark:bg-black/10"
+        style={{ paddingBottom: insets.bottom || 8, ...glassBlur }}
+        className="flex-row border-t border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/[0.04]"
       >
         {NAV_ITEMS.map((item) => {
           const active = pathname.startsWith(item.href.replace("/(tabs)", ""));

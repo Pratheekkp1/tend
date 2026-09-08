@@ -10,6 +10,7 @@ import { CalendarTimeline, type TimelineDay } from "@/components/CalendarTimelin
 import { DayAgenda } from "@/components/DayAgenda";
 import { DaySheet } from "@/components/DaySheet";
 import { QuickAddInput } from "@/components/ui/QuickAddInput";
+import { glassBlur } from "@/lib/glass";
 import { useGoogleCalendarEvents, useGoogleCalendarStatus } from "@/lib/googleCalendar";
 import { cyclePriority } from "@/lib/priority";
 import {
@@ -84,9 +85,9 @@ export default function CalendarScreen() {
 
   const theme = {
     calendarBackground: "transparent",
-    dayTextColor: isDark ? "#f7ede2" : "#4a3f37",
-    monthTextColor: isDark ? "#f7ede2" : "#4a3f37",
-    textDisabledColor: isDark ? "#6b5c4f" : "#c4a58f",
+    dayTextColor: isDark ? "#f1efec" : "#33302c",
+    monthTextColor: isDark ? "#f1efec" : "#33302c",
+    textDisabledColor: isDark ? "#4d4e52" : "#c9c4bd",
     todayTextColor: ACCENT,
     todayBackgroundColor: isDark ? "rgba(242,132,130,0.2)" : "rgba(242,132,130,0.14)",
     arrowColor: ACCENT,
@@ -324,7 +325,10 @@ function WideCalendarSplit({
           panelAnimStyle,
         ]}
       >
-        <View className="flex-1 rounded-t-3xl border-t border-accent-900/10 dark:border-white/10 bg-surface-light dark:bg-surface-dark-subtle overflow-hidden">
+        <View
+          className="flex-1 rounded-t-3xl border-t border-black/5 dark:border-white/10 bg-surface-light dark:bg-surface-dark-subtle/85 overflow-hidden"
+          style={glassBlur}
+        >
           {agenda}
         </View>
       </Animated.View>
