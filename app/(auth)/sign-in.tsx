@@ -54,7 +54,7 @@ export default function SignIn() {
           <View className="h-16 w-16 items-center justify-center rounded-3xl bg-accent-500">
             <Ionicons name="flower" size={28} color="white" />
           </View>
-          <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark">Productivity</Text>
+          <Text className="text-2xl font-bold text-ink-light dark:text-ink-dark">Tend</Text>
           <Text className="text-center text-sm text-ink-light/60 dark:text-ink-dark/60">
             Your calendar and to-dos, in sync everywhere.
           </Text>

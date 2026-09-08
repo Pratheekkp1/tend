@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ProductivityApp",
-    "slug": "ProductivityApp",
+    "name": "Tend",
+    "slug": "tend",
     "scheme": "productivityapp",
     "version": "1.0.0",
     "orientation": "default",

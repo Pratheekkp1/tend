@@ -30,7 +30,7 @@ export function NavShell({ children }: { children: ReactNode }) {
           className="border-r border-black/5 dark:border-white/10 bg-white/80 dark:bg-white/[0.04] px-4"
         >
           <Text className="px-2 mb-8 text-lg font-bold text-ink-light dark:text-ink-dark">
-            Productivity
+            Tend
           </Text>
           <View className="gap-1">
             {NAV_ITEMS.map((item) => {
