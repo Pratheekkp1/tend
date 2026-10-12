@@ -25,7 +25,11 @@ const SCOPES = [
 export function useGoogleAuthRequest() {
   const clientType: "ios" | "web" = Platform.OS === "web" ? "web" : "ios";
   const clientId = clientType === "web" ? GOOGLE_WEB_CLIENT_ID : GOOGLE_IOS_CLIENT_ID;
-  const redirectUri = AuthSession.makeRedirectUri({ scheme: "productivityapp" });
+  // `native` (not `scheme`) is required in a bare/dev-client build: `scheme`
+  // alone still resolves via the runtime app-config manifest, which only
+  // exists under Expo Go/EAS Update -- it throws here since this build has
+  // none. `native` bypasses that lookup and takes precedence outright.
+  const redirectUri = AuthSession.makeRedirectUri({ native: "productivityapp://" });
 
   const [request, response, promptAsync] = AuthSession.useAuthRequest(
     {
